@@ -1,13 +1,13 @@
 import React from 'react'
 import { Text, View } from 'react-native'
 
-function Login() {
+function Home() {
   return (
     
     <View>
-        <Text>Login</Text>
+        <Text>Home</Text>
     </View>
   )
 }
 
-export default Login
+export default Home
