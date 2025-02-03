@@ -7,7 +7,7 @@ import Home from '../screens/Home';
 function MainNavigation() {
     const Stack= createNativeStackNavigator();
   return (
-    <Stack.Navigator initialRouteName='Login'>
+    <Stack.Navigator initialRouteName='Home'>
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Register" component={Register} />
         <Stack.Screen name="Home" component={Home} />
