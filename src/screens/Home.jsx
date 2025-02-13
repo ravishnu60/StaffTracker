@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Calendar } from 'react-native-big-calendar';
 import { Button, Text } from 'react-native-paper';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
@@ -79,26 +79,29 @@ function Home() {
           eventCellStyle={{ flex: 1 }}
           renderEvent={RenderEvent}
           calendarCellStyle={styles.calendar}
-          calendarCellTextStyle={{ flex: 5, textAlign: 'center', fontWeight:'bold' }}
-          headerContainerStyle={{backgroundColor:'#30abe5'}}
+          calendarCellTextStyle={{ flex: 5, textAlign: 'center', fontWeight: 'bold' }}
+          headerContainerStyle={{ backgroundColor: '#30abe5' }}
         />
       </View>
-      <View style={{padding:5, marginTop:300}}>
+      <Text style={{ fontWeight: 'bold', padding: 5, marginTop: 280, marginBottom: 10 }}>Upcoming Events</Text>
+
+      <ScrollView style={{ padding: 5 }}>
         {
-          events.map((items, index)=>
-          <View key={index}>
-            <Text>{items.title}</Text>
-          </View>)
+          events.map((items, index) =>
+            <View key={index} style={styles.details}>
+              <Text>{items.title}</Text>
+              <Text>{items.start.toDateString()}</Text>
+            </View>)
         }
-      </View>
+      </ScrollView>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container:{
-    flex:1,
-    backgroundColor:'#fff'
+  container: {
+    flex: 1,
+    backgroundColor: '#fff'
   },
   calendar_head: {
     flexDirection: 'row',
@@ -107,14 +110,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#44b1e4',
     padding: 10,
   },
-  calendar:{
-    flexDirection: 'row', 
-    flex: 2, 
-    justifyContent: 'flex-start', 
-    alignItems: 'flex-end', 
-    borderColor: '#5e5e5e', 
-    backgroundColor:'#e6f6fa', 
-    padding:3
+  calendar: {
+    flexDirection: 'row',
+    flex: 2,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    borderColor: '#5e5e5e',
+    backgroundColor: '#e6f6fa',
+    padding: 3
+  },
+  details: {
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: '#e6f6fa'
   }
 })
 
