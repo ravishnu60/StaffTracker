@@ -1,48 +1,21 @@
-import React, { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { set } from 'react-hook-form';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-big-calendar';
 import { Button, Text } from 'react-native-paper';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import { date } from 'yup';
 
-function Home() {
+function Home({ navigation }) {
   const [selDate, setSelDate] = useState(new Date());
-  const [events, setEvents] = useState([
-    {
-      title: 'Meeting',
-      start: new Date(2025, 0, 28, 10, 0),
-      end: new Date(2025, 0, 28, 10, 30),
-    },
-    {
-      title: 'Meeting',
-      start: new Date(2025, 0, 28, 10, 0),
-      end: new Date(2025, 0, 28, 10, 30),
-    },
-    {
-      title: 'Meeting',
-      start: new Date(2025, 0, 28, 10, 0),
-      end: new Date(2025, 0, 28, 10, 30),
-    },
-    {
-      title: 'Meeting',
-      start: new Date(2025, 0, 28, 10, 0),
-      end: new Date(2025, 0, 28, 10, 30),
-    },
-    {
-      title: 'Meeting',
-      start: new Date(2025, 0, 28, 10, 0),
-      end: new Date(2025, 0, 28, 10, 30),
-    },
-    {
-      title: 'Meeting',
-      start: new Date(2025, 0, 28, 10, 0),
-      end: new Date(2025, 0, 28, 10, 30),
-    },
-    {
-      title: 'Coffee break',
-      start: new Date(2025, 0, 31, 15, 45),
-      end: new Date(2025, 0, 31, 16, 30),
-    },
-  ])
+  const events = [
+    { start: new Date('2025-02-14'), unit: 'Math', lesson: 'Algebra', status: 'Completed' },
+    { start: new Date('2025-02-15'), unit: 'Science', lesson: 'Physics', status: 'Pending' },
+    { start: new Date('2025-02-14'), unit: 'English', lesson: 'Grammar', status: 'Completed' },
+    { start: new Date('2025-02-17'), unit: 'History', lesson: 'World War II', status: 'Ongoing' },
+    { start: new Date('2025-02-18'), unit: 'Chemistry', lesson: 'Organic', status: 'Completed' },
+  ];
+  const [selEvents, setSelEvents] = useState([]);
 
   const selectedDate = (date) => {
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
@@ -55,8 +28,12 @@ function Home() {
       <View style={{ width: 4, height: 4, borderRadius: 100, backgroundColor: 'red' }} />
       // </View>
     )
-
   }
+
+  useEffect(() => {
+    setSelEvents(events.filter(e => e.start.getDate() === selDate.getDate()));
+
+  }, [selDate])
 
   return (
     <View style={styles.container}>
@@ -74,26 +51,30 @@ function Home() {
           date={selDate}
           mode='month'
           events={events}
-          height={400}
+          height={360}
           eventMinHeightForMonthView={3}
-          eventCellStyle={{ flex: 1 }}
           renderEvent={RenderEvent}
           calendarCellStyle={styles.calendar}
-          calendarCellTextStyle={{ flex: 5, textAlign: 'center', fontWeight: 'bold' }}
+          calendarCellTextStyle={{ textAlign: 'center', fontWeight: 'bold' }}
           headerContainerStyle={{ backgroundColor: '#30abe5' }}
+          onPressCell={(date) => setSelDate(date)}
         />
       </View>
-      <Text style={{ fontWeight: 'bold', padding: 5, marginTop: 280, marginBottom: 10 }}>Upcoming Events</Text>
+      <Text style={{ fontWeight: 'bold', padding: 5, marginTop: 250, marginBottom: 10 }}>Entries on  - {selDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
 
       <ScrollView style={{ padding: 5 }}>
         {
-          events.map((items, index) =>
+          selEvents.map((items, index) =>
             <View key={index} style={styles.details}>
-              <Text>{items.title}</Text>
-              <Text>{items.start.toDateString()}</Text>
+              <Text style={{ fontWeight: 'bold', padding: 5 }}>{items.unit} - <Text style={{ fontSize: 13 }}>{items.lesson}</Text></Text>
+              <Text style={{ fontSize: 13 }}>{items.status}</Text>
             </View>)
         }
       </ScrollView>
+      {/* plus icon for add form */}
+      <TouchableOpacity style={styles.addIcon} onPress={() => navigation.navigate('AddForm')} >
+        <FontAwesome name='plus' size={25} color='#fff' />
+      </TouchableOpacity>
     </View>
   )
 }
@@ -111,18 +92,34 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   calendar: {
-    flexDirection: 'row',
-    flex: 2,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     borderColor: '#5e5e5e',
     backgroundColor: '#e6f6fa',
     padding: 3
   },
   details: {
     padding: 10,
+    margin: 15,
+    marginTop: 5,
+    marginLeft: 5,
     marginBottom: 10,
-    backgroundColor: '#e6f6fa'
+    borderRadius: 5,
+    backgroundColor: '#85d7ec',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  
+  addIcon: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    bottom: 20,
+    right: 20,
+    height: 50,
+    width: 50,
+    backgroundColor: '#44b1e4',
+    borderRadius: 100
   }
 })
 
