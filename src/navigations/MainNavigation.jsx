@@ -9,7 +9,7 @@ import Admin from '../screens/Admin';
 function MainNavigation() {
     const Stack= createNativeStackNavigator();
   return (
-    <Stack.Navigator initialRouteName='Home'>
+    <Stack.Navigator initialRouteName='Login'>
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Register" component={Register} />
         <Stack.Screen name="Admin" component={Admin} />

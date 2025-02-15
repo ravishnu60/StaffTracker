@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
-import { Button, DataTable, Text } from 'react-native-paper';
+import { View, FlatList, Alert, StyleSheet } from 'react-native';
+import { Button, DataTable, Text, IconButton } from 'react-native-paper';
 
 const users = [
   { id: 1, name: 'Alice Johnson', email: 'alice@example.com' },
@@ -17,8 +17,12 @@ const departments = [
 const DataList = () => {
   const [selectedTab, setSelectedTab] = useState('Users'); // Track active tab
 
-  // Get data based on selection
   const data = selectedTab === 'Users' ? users : departments;
+
+  // Action Handlers
+  const handleView = (item) => Alert.alert('View Details', JSON.stringify(item, null, 2));
+  const handleEdit = (item) => Alert.alert('Edit', `Editing ${item.name}`);
+  const handleDelete = (item) => Alert.alert('Delete', `Deleting ${item.name}`);
 
   return (
     <View style={styles.container}>
@@ -48,7 +52,8 @@ const DataList = () => {
         <DataTable.Header>
           <DataTable.Title>ID</DataTable.Title>
           <DataTable.Title>{selectedTab === 'Users' ? 'Name' : 'Department'}</DataTable.Title>
-          <DataTable.Title>{selectedTab === 'Users' ? 'Email' : 'Head'}</DataTable.Title>
+          {/* <DataTable.Title>{selectedTab === 'Users' ? 'Email' : 'Head'}</DataTable.Title> */}
+          <DataTable.Title>Actions</DataTable.Title>
         </DataTable.Header>
 
         <FlatList
@@ -56,9 +61,14 @@ const DataList = () => {
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <DataTable.Row>
-              <DataTable.Cell>{item.id}</DataTable.Cell>
-              <DataTable.Cell>{item.name}</DataTable.Cell>
+              {/* <DataTable.Cell>{item.id}</DataTable.Cell> */}
+              {/* <DataTable.Cell>{item.name}</DataTable.Cell> */}
               <DataTable.Cell>{selectedTab === 'Users' ? item.email : item.head}</DataTable.Cell>
+              <DataTable.Cell>
+                <IconButton icon="eye" size={15} onPress={() => handleView(item)} />
+                <IconButton icon="pencil" size={15} onPress={() => handleEdit(item)} />
+                <IconButton icon="delete" size={15} onPress={() => handleDelete(item)} />
+              </DataTable.Cell>
             </DataTable.Row>
           )}
         />

@@ -21,7 +21,11 @@ const Login = () => {
 
   const onSubmit = (data) => {
     console.log(data);
-    navigate.navigate('Home')
+    if (data.username === 'admin' && data.password === 'admin@123') {
+      navigate.navigate('Admin')
+    }else{
+      navigate.navigate('Home')
+    }
   };
 
   return (
