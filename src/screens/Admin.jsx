@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, FlatList, Alert, StyleSheet, TouchableOpacity } from 'react-native';
 import { Button, DataTable, Text, IconButton, Modal, Portal, TextInput, Provider } from 'react-native-paper';
-import { AddUserModal } from './User';
+import User from './User';
+import Department from './Department';
 
 const users = [
   { id: 1, name: 'Alice Johnson', email: 'qRn9Z@example.com', role: 'Admin' },
@@ -17,118 +18,20 @@ const departments = [
 
 const DataList = () => {
   const [selectedTab, setSelectedTab] = useState('Users');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [expandedRow, setExpandedRow] = useState(null);
-  const [newEntry, setNewEntry] = useState('');
-
-  const data = selectedTab === 'Users' ? users : departments;
-  const columns = selectedTab === 'Users' ? ["Name", 'Email', 'Role', 'Actions'] : ["Name", 'Actions'];
-
-  const UserTable = () => {
-    return (
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <>
-            <DataTable.Row>
-              <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.name}</Text></DataTable.Cell>
-              <DataTable.Cell style={{ flex: 3 }}><Text style={styles.tableCell} numberOfLines={1}>{item.email}</Text></DataTable.Cell>
-              <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.role}</Text></DataTable.Cell>
-              <DataTable.Cell style={{ flex: 1 }}>
-                <IconButton icon={expandedRow === item.id ? "chevron-up" : "chevron-down"} iconColor='#000' size={20} onPress={() => toggleExpand(item.id)} />
-              </DataTable.Cell>
-            </DataTable.Row>
-
-            {expandedRow === item.id && (
-              <View style={[styles.actionContainer, { backgroundColor: '#e9e9e9' }]}>
-                <IconButton icon="eye" iconColor='#000' size={20} onPress={() => Alert.alert('View', JSON.stringify(item, null, 2))} />
-                <IconButton icon="pencil" iconColor='#000' size={20} onPress={() => Alert.alert('Edit', `Editing ${item.name}`)} />
-                <IconButton icon="delete" iconColor='#000' size={20} onPress={() => Alert.alert('Delete', `Deleting ${item.name}`)} />
-              </View>
-            )}
-          </>
-        )}
-      />
-    )
-  }
-
-  const DepartmentTable = () => {
-    return (
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <>
-            <DataTable.Row>
-              <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.name}</Text></DataTable.Cell>
-              <DataTable.Cell style={{ flex: 1 }}>
-                <View style={styles.actionContainer}>
-                  <IconButton icon="eye" iconColor='#000' size={20} onPress={() => Alert.alert('View', JSON.stringify(item, null, 2))} />
-                  <IconButton icon="pencil" iconColor='#000' size={20} onPress={() => Alert.alert('Edit', `Editing ${item.name}`)} />
-                  <IconButton icon="delete" iconColor='#000' size={20} onPress={() => Alert.alert('Delete', `Deleting ${item.name}`)} />
-                </View>
-              </DataTable.Cell>
-            </DataTable.Row>
-          </>
-        )}
-      />
-    )
-  }
-
-  const toggleExpand = (id) => {
-    setExpandedRow(expandedRow === id ? null : id);
-  };
-
-  // Modal Handlers
-  const openModal = () => setModalVisible(true);
-  const closeModal = () => setModalVisible(false);
-
-  // Handle Add
-  const handleAdd = () => {
-    if (!newEntry) {
-      Alert.alert('Error', `${selectedTab} name is required`);
-      return;
-    }
-    Alert.alert('Success', `${selectedTab} "${newEntry}" added successfully!`);
-    closeModal();
-  };
 
   return (
-      <View style={styles.container}>
-        {/* Top Menu */}
-        <View style={styles.menuContainer}>
-          <Text style={[styles.menuItem, selectedTab === 'Users' && styles.activeMenu]} onPress={() => setSelectedTab('Users')}>
-            Users
-          </Text>
-          <Text style={[styles.menuItem, selectedTab === 'Departments' && styles.activeMenu]} onPress={() => setSelectedTab('Departments')}>
-            Departments
-          </Text>
-        </View>
-
-        {/* Add Button */}
-        <View style={styles.addButtonContainer}>
-          <TouchableOpacity onPress={openModal} style={styles.addButton}>
-            <Text style={styles.addButtonLabel}>Add {selectedTab}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Table */}
-        <DataTable>
-          <DataTable.Header>
-            {columns.map((column) => (
-              <DataTable.Title key={column} style={{ flex: column === 'Actions' ? 1 : column === 'Email' ? 3 : 2, paddingLeft: 5 }}>
-                <Text style={styles.tableHeader}>{column}</Text>
-              </DataTable.Title>
-            ))}
-          </DataTable.Header>
-          {selectedTab === 'Users' ? <UserTable /> : <DepartmentTable />}
-        </DataTable>
-
-        {/* Modal for Adding */}
-        <AddUserModal visible={modalVisible} onDismiss={() => setModalVisible(false)} />
-
+    <View style={styles.container}>
+      {/* Top Menu */}
+      <View style={styles.menuContainer}>
+        <Text style={[styles.menuItem, selectedTab === 'Users' && styles.activeMenu]} onPress={() => setSelectedTab('Users')}>
+          Users
+        </Text>
+        <Text style={[styles.menuItem, selectedTab === 'Departments' && styles.activeMenu]} onPress={() => setSelectedTab('Departments')}>
+          Departments
+        </Text>
       </View>
+      { selectedTab === 'Users' ? <User /> : <Department />}
+    </View>
   );
 };
 

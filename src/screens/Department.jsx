@@ -9,11 +9,6 @@ import axios from 'axios';
 import { base_url } from '../utils/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const users = [
-    { id: 1, name: 'Alice Johnson', email: 'qRn9Z@example.com', role: 'Admin' },
-    { id: 2, name: 'Bob Smith', email: 'YjM9g@example.com', role: 'Manager' },
-    { id: 3, name: 'Charlie Brown', email: 'HqWt3@example.com', role: 'Employee' },
-];
 
 // Department options
 const departments = [
@@ -22,50 +17,28 @@ const departments = [
     { id: 3, name: 'Human Resources' },
 ];
 
-const columns = ["Name", 'Email', 'Role', 'Actions'];
+const columns = ["Name", 'Actions'];
 
-// Form Fields Configuration
-const formFields = [
-    { name: 'name', label: 'Full Name' },
-    { name: 'addressingname', label: 'Addressing Name' },
-    { name: 'email', label: 'Email', keyboardType: 'email-address' },
-    { name: 'mobilenumber', label: 'Mobile Number', keyboardType: 'numeric' },
-    { name: 'password', label: 'Password', secureTextEntry: true },
-];
-
-const User = ({ navigation }) => {
+const Department = ({ navigation }) => {
 
     const schema = yup.object().shape({
-        name: yup.string().required('Name is required'),
-        addressingname: yup.string().required('Addressing Name is required'),
-        email: yup.string().email('Invalid email').required('Email is required'),
-        mobilenumber: yup.string().matches(/^\d{10}$/, 'Invalid mobile number').required('Mobile number is required'),
-        password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
-        role: yup.number(),
-        status: yup.boolean(),
-        departmentId: yup.object().required('Department ID is required'),
+        name: yup.string().required('Name is required')
     });
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         resolver: yupResolver(schema),
         defaultValues: {
-            role: 2,
-            status: true
+            name: null
         }
     });
 
     const [modalVisible, setModalVisible] = useState(false);
     const [mode, setMode] = useState('Add');
-    const [expandedRow, setExpandedRow] = useState(null);
 
     const openModal = () => setModalVisible(true);
     const closeModal = () => {
         reset({});
         setModalVisible(false);
     }
-
-    const toggleExpand = (id) => {
-        setExpandedRow(expandedRow === id ? null : id);
-    };
 
     const deleteUser = (id) => {
         Alert.alert('Are you sure to delete ?', '', [
@@ -76,7 +49,7 @@ const User = ({ navigation }) => {
             {
                 text: 'Delete',
                 onPress: () => {
-                    Alert.alert('User deleted!')
+                    Alert.alert('Department deleted!')
                 }
             }
         ])
@@ -101,7 +74,7 @@ const User = ({ navigation }) => {
             {/* Add Button */}
             <View style={styles.addButtonContainer}>
                 <TouchableOpacity onPress={openModal} style={styles.addButton}>
-                    <Text style={styles.addButtonLabel}>Add User</Text>
+                    <Text style={styles.addButtonLabel}>{mode} Department</Text>
                 </TouchableOpacity>
             </View>
 
@@ -116,26 +89,20 @@ const User = ({ navigation }) => {
                 </DataTable.Header>
 
                 <FlatList
-                    data={users}
+                    data={departments}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
                         <>
                             <DataTable.Row>
                                 <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.name}</Text></DataTable.Cell>
-                                <DataTable.Cell style={{ flex: 3 }}><Text style={styles.tableCell} numberOfLines={1}>{item.email}</Text></DataTable.Cell>
-                                <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.role}</Text></DataTable.Cell>
                                 <DataTable.Cell style={{ flex: 1 }}>
-                                    <IconButton icon={expandedRow === item.id ? "chevron-up" : "chevron-down"} iconColor='#000' size={20} onPress={() => toggleExpand(item.id)} />
+                                    <View style={styles.actionContainer}>
+                                        <IconButton icon="eye" iconColor='#18a6d9' size={20} onPress={() => { reset(item); setMode('View'); setModalVisible(true) }} />
+                                        <IconButton icon="pencil" iconColor='#01ac24' size={20} onPress={() => { reset(item); setMode('Edit'); setModalVisible(true); }} />
+                                        <IconButton icon="delete" iconColor='#ff5959' size={20} onPress={() => deleteUser(item?.id)} />
+                                    </View>
                                 </DataTable.Cell>
                             </DataTable.Row>
-
-                            {expandedRow === item.id && (
-                                <View style={[styles.actionContainer, { backgroundColor: '#e9e9e9' }]}>
-                                    <IconButton icon="eye" iconColor='#18a6d9' size={20} onPress={() => { reset(item); setMode('View'); setModalVisible(true) }} />
-                                    <IconButton icon="pencil" iconColor='#01ac24' size={20} onPress={() => { reset(item); setMode('Edit'); setModalVisible(true); }} />
-                                    <IconButton icon="delete" iconColor='#ff5959' size={20} onPress={() => deleteUser(item?.id)} />
-                                </View>
-                            )}
                         </>
                     )}
                 />
@@ -143,13 +110,9 @@ const User = ({ navigation }) => {
 
             <Modal visible={modalVisible} onDismiss={closeModal} contentContainerStyle={styles.modal}>
                 <ScrollView contentContainerStyle={{ padding: 10 }}>
-                    <Text style={{ textAlign: 'center', marginBottom: 20, fontSize: 20 }}>{mode} User</Text>
+                    <Text style={{ textAlign: 'center', marginBottom: 20, fontSize: 20 }}>{mode} Department</Text>
                     {[
-                        { name: 'name', label: 'Name' },
-                        { name: 'addressingname', label: 'Addressing Name' },
-                        { name: 'email', label: 'Email', keyboardType: 'email-address' },
-                        { name: 'mobilenumber', label: 'Mobile Number', keyboardType: 'phone-pad' },
-                        { name: 'password', label: 'Password', secureTextEntry: true },
+                        { name: 'name', label: 'Name' }
                     ].map(({ name, label, ...rest }) => (
                         <View key={name}>
                             <Controller
@@ -172,26 +135,11 @@ const User = ({ navigation }) => {
                         </View >
 
                     ))}
-                    <Controller
-                        control={control}
-                        name='departmentId'
-                        render={({ field: { onChange, value } }) =>
-                            <Dropdown
-                                data={departments}
-                                style={[styles.input, styles.dropdown]}
-                                placeholder='Select Department'
-                                valueField='id'
-                                labelField='name'
-                                value={value}
-                                onChange={onChange}
-                                disable={mode === 'View'}
-                            />
-                        }
-                    />
+                    
                     <Text style={{ color: 'red', marginBottom: 10 }}>{errors?.departmentId?.message}</Text>
                     <View style={{ flexDirection: 'row', columnGap: 20, alignItems: 'center', justifyContent: 'center' }}>
                         <Button mode="contained-tonal" contentStyle={{ backgroundColor: '#f76666' }} labelStyle={{ color: '#fff' }} onPress={closeModal} >Close </Button>
-                       {mode !== 'View' && <Button mode="contained" onPress={handleSubmit(onSubmit)} > {mode} </Button>}
+                        {mode !== 'View' && <Button mode="contained" onPress={handleSubmit(onSubmit)} > {mode} </Button>}
                     </View>
                 </ScrollView>
             </Modal>
@@ -272,4 +220,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default User;
+export default Department;
