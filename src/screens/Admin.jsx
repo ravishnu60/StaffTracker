@@ -1,20 +1,9 @@
 import React, { useState } from 'react';
-import { View, FlatList, Alert, StyleSheet, TouchableOpacity } from 'react-native';
-import { Button, DataTable, Text, IconButton, Modal, Portal, TextInput, Provider } from 'react-native-paper';
+import { View, StyleSheet } from 'react-native';
+import { Text } from 'react-native-paper';
 import User from './User';
 import Department from './Department';
 
-const users = [
-  { id: 1, name: 'Alice Johnson', email: 'qRn9Z@example.com', role: 'Admin' },
-  { id: 2, name: 'Bob Smith', email: 'YjM9g@example.com', role: 'Manager' },
-  { id: 3, name: 'Charlie Brown', email: 'HqWt3@example.com', role: 'Employee' },
-];
-
-const departments = [
-  { id: 1, name: 'Engineering' },
-  { id: 2, name: 'Marketing' },
-  { id: 3, name: 'Human Resources' },
-];
 
 const DataList = () => {
   const [selectedTab, setSelectedTab] = useState('Users');

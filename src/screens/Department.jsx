@@ -6,8 +6,10 @@ import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Dropdown } from 'react-native-element-dropdown';
 import axios from 'axios';
-import { base_url } from '../utils/utils';
+import { base_url, Loading } from '../utils/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIsFocused } from '@react-navigation/native';
+import axiosInstance from '../utils/axiosInstance';
 
 
 // Department options
@@ -20,17 +22,19 @@ const departments = [
 const columns = ["Name", 'Actions'];
 
 const Department = ({ navigation }) => {
-
     const schema = yup.object().shape({
-        name: yup.string().required('Name is required')
+        departmentName: yup.string().required('Name is required')
     });
     const { control, handleSubmit, formState: { errors }, reset } = useForm({
         resolver: yupResolver(schema),
         defaultValues: {
-            name: null
+            departmentName: null
         }
     });
 
+    const isFocused = useIsFocused();
+    const [departmentList, setDepartmentList] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [mode, setMode] = useState('Add');
 
@@ -38,6 +42,48 @@ const Department = ({ navigation }) => {
     const closeModal = () => {
         reset({});
         setModalVisible(false);
+    }
+
+    const getDepartments = () => {
+        setLoading(true);
+        axiosInstance({
+            method: 'GET',
+            url: 'staff/department/findAll'
+        }).then((res) => {
+            console.log(res.data);
+            
+            if (res.data.status) {
+                setDepartmentList(res.data.departments);
+            } else {
+                Alert.alert('Error', 'Failed to get department list');
+            }
+        }).catch((err) => {
+            console.log(err);
+            Alert.alert('Error', 'Failed to get department list');
+        }).finally(() => {
+            setLoading(false);
+        })
+    }
+
+    const createDepartment = (data) => {
+        setLoading(true);
+        axiosInstance({
+            method: 'POST',
+            url: 'staff/department/createdept',
+            data: data
+        }).then((res) => {
+            console.log(res.data);
+            if (res.data.status) {
+                getDepartments();
+            } else {
+                Alert.alert('Error', 'Failed to create department');
+            }
+        }).catch((err) => {
+            console.log(err);
+            Alert.alert('Error', 'Failed to create department');
+        }).finally(() => {
+            setLoading(false);
+        })
     }
 
     const deleteUser = (id) => {
@@ -55,22 +101,15 @@ const Department = ({ navigation }) => {
         ])
     }
 
-    const onSubmit = async (data) => {
-        let token = AsyncStorage.getItem('token')
-        axios({
-            method: 'POST',
-            url: base_url + 'staff/user/create',
-            data: data,
-            headers: { Authorization: token }
-        }).then((res) => {
-
-        }).catch((err) => {
-
-        })
-    };
-
+    useEffect(() => {
+        if (isFocused) {
+            getDepartments();
+        }
+    }, [isFocused]);
+    
     return (
         <View style={styles.container}>
+            <Loading visible={loading} />
             {/* Add Button */}
             <View style={styles.addButtonContainer}>
                 <TouchableOpacity onPress={openModal} style={styles.addButton}>
@@ -89,12 +128,12 @@ const Department = ({ navigation }) => {
                 </DataTable.Header>
 
                 <FlatList
-                    data={departments}
+                    data={departmentList}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
                         <>
                             <DataTable.Row>
-                                <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.name}</Text></DataTable.Cell>
+                                <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.departmentName}</Text></DataTable.Cell>
                                 <DataTable.Cell style={{ flex: 1 }}>
                                     <View style={styles.actionContainer}>
                                         <IconButton icon="eye" iconColor='#18a6d9' size={20} onPress={() => { reset(item); setMode('View'); setModalVisible(true) }} />
@@ -112,7 +151,7 @@ const Department = ({ navigation }) => {
                 <ScrollView contentContainerStyle={{ padding: 10 }}>
                     <Text style={{ textAlign: 'center', marginBottom: 20, fontSize: 20 }}>{mode} Department</Text>
                     {[
-                        { name: 'name', label: 'Name' }
+                        { name: 'departmentName', label: 'Name' }
                     ].map(({ name, label, ...rest }) => (
                         <View key={name}>
                             <Controller
@@ -135,11 +174,11 @@ const Department = ({ navigation }) => {
                         </View >
 
                     ))}
-                    
+
                     <Text style={{ color: 'red', marginBottom: 10 }}>{errors?.departmentId?.message}</Text>
                     <View style={{ flexDirection: 'row', columnGap: 20, alignItems: 'center', justifyContent: 'center' }}>
                         <Button mode="contained-tonal" contentStyle={{ backgroundColor: '#f76666' }} labelStyle={{ color: '#fff' }} onPress={closeModal} >Close </Button>
-                        {mode !== 'View' && <Button mode="contained" onPress={handleSubmit(onSubmit)} > {mode} </Button>}
+                        {mode !== 'View' && <Button mode="contained" onPress={handleSubmit(createDepartment)} > {mode} </Button>}
                     </View>
                 </ScrollView>
             </Modal>

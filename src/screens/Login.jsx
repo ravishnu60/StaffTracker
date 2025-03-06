@@ -1,17 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { TextInput, Button, Text } from 'react-native-paper';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
-import axios from 'axios';
-import { base_url } from '../utils/utils';
+import axiosInstance from '../utils/axiosInstance';
+import { Loading } from '../utils/utils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const Login = () => {
   const navigate = useNavigation();
   const isFocused = useIsFocused();
+
+  // loading
+  const [loading, setLoading] = useState(false);
 
   // Validation Schema
   const schema = yup.object().shape({
@@ -23,22 +27,29 @@ const Login = () => {
   });
 
   const onSubmit = (data) => {
-    console.log(data);
-    navigate.navigate('Admin')
-
-    axios({
+    setLoading(true);
+    axiosInstance({
       method: 'POST',
-      url: base_url + 'staff/auth/login',
+      url: 'staff/auth/login',
       data: data
     }).then((res) => {
-      if (res.data?.role?.id === 1) {
-        navigate.navigate('Admin')
+      console.log(res.data);
+      if (res.data.status) {
+        AsyncStorage.setItem('token', res.data.response.Authorization);
+        if (res.data?.response?.rights === "All") {
+          navigate.navigate('Admin')
+        } else {
+          navigate.navigate('Home')
+        }
       } else {
-        navigate.navigate('Home')
+        Alert.alert('Error', 'Invalid username or password');
       }
+
     }).catch((err) => {
       console.log(err);
       Alert.alert('Error', 'Invalid username or password');
+    }).finally(() => {
+      setLoading(false);
     })
   };
 
@@ -49,7 +60,8 @@ const Login = () => {
   }, [isFocused])
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20 }}>
+    <ScrollView contentContainerStyle={{ padding: 20, flexGrow: 1, justifyContent: 'center' }} >
+      <Loading visible={loading} />
       <Text variant="headlineLarge" style={{ textAlign: 'center', marginBottom: 20 }}>Login</Text>
       {[
         { name: 'username', label: 'Username' },

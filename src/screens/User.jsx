@@ -8,6 +8,8 @@ import { Dropdown } from 'react-native-element-dropdown';
 import axios from 'axios';
 import { base_url } from '../utils/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useIsFocused } from '@react-navigation/native';
+import axiosInstance from '../utils/axiosInstance';
 
 const users = [
     { id: 1, name: 'Alice Johnson', email: 'qRn9Z@example.com', role: 'Admin' },
@@ -24,16 +26,10 @@ const departments = [
 
 const columns = ["Name", 'Email', 'Role', 'Actions'];
 
-// Form Fields Configuration
-const formFields = [
-    { name: 'name', label: 'Full Name' },
-    { name: 'addressingname', label: 'Addressing Name' },
-    { name: 'email', label: 'Email', keyboardType: 'email-address' },
-    { name: 'mobilenumber', label: 'Mobile Number', keyboardType: 'numeric' },
-    { name: 'password', label: 'Password', secureTextEntry: true },
-];
-
 const User = ({ navigation }) => {
+
+    const isFocused = useIsFocused();
+    const [userList, setUserList] = useState([]);
 
     const schema = yup.object().shape({
         name: yup.string().required('Name is required'),
@@ -67,6 +63,10 @@ const User = ({ navigation }) => {
         setExpandedRow(expandedRow === id ? null : id);
     };
 
+    const getusers = () => {
+        axiosInstance.get()
+    }
+
     const deleteUser = (id) => {
         Alert.alert('Are you sure to delete ?', '', [
             {
@@ -95,6 +95,12 @@ const User = ({ navigation }) => {
 
         })
     };
+
+    useEffect(() => {
+        if (isFocused) {
+
+        }
+    }, [isFocused])
 
     return (
         <View style={styles.container}>
