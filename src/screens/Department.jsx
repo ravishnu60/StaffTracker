@@ -50,8 +50,6 @@ const Department = ({ navigation }) => {
             method: 'GET',
             url: 'staff/department/findAll'
         }).then((res) => {
-            console.log(res.data);
-            
             if (res.data.status) {
                 setDepartmentList(res.data.departments);
             } else {
@@ -75,6 +73,8 @@ const Department = ({ navigation }) => {
             console.log(res.data);
             if (res.data.status) {
                 getDepartments();
+                closeModal();
+                Alert.alert('Success', 'Department created successfully');
             } else {
                 Alert.alert('Error', 'Failed to create department');
             }

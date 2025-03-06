@@ -6,10 +6,11 @@ import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Dropdown } from 'react-native-element-dropdown';
 import axios from 'axios';
-import { base_url } from '../utils/utils';
+import { base_url, Loading } from '../utils/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useIsFocused } from '@react-navigation/native';
 import axiosInstance from '../utils/axiosInstance';
+import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 
 const users = [
     { id: 1, name: 'Alice Johnson', email: 'qRn9Z@example.com', role: 'Admin' },
@@ -28,16 +29,13 @@ const columns = ["Name", 'Email', 'Role', 'Actions'];
 
 const User = ({ navigation }) => {
 
-    const isFocused = useIsFocused();
-    const [userList, setUserList] = useState([]);
-
     const schema = yup.object().shape({
         name: yup.string().required('Name is required'),
         addressingname: yup.string().required('Addressing Name is required'),
         email: yup.string().email('Invalid email').required('Email is required'),
         mobilenumber: yup.string().matches(/^\d{10}$/, 'Invalid mobile number').required('Mobile number is required'),
         password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
-        role: yup.number(),
+        roleId: yup.number(),
         status: yup.boolean(),
         departmentId: yup.object().required('Department ID is required'),
     });
@@ -49,6 +47,11 @@ const User = ({ navigation }) => {
         }
     });
 
+    const isFocused = useIsFocused();
+    const [roles, setRoles] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [userList, setUserList] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [mode, setMode] = useState('Add');
     const [expandedRow, setExpandedRow] = useState(null);
@@ -63,9 +66,53 @@ const User = ({ navigation }) => {
         setExpandedRow(expandedRow === id ? null : id);
     };
 
-    const getusers = () => {
-        axiosInstance.get()
+    const getUsers = () => {
+        setLoading(true);
+        axiosInstance.get('staff/user/findAll').then((res) => {
+            if (res.data.status) {
+                setUserList(res.data.users);
+            } else {
+                Alert.alert('Error', 'Failed to get user list');
+            }
+        }).catch((err) => {
+            console.log(err);
+            Alert.alert('Error', 'Failed to get user list');
+        }).finally(() => {
+            setLoading(false);
+        })
     }
+
+    const getDepartments = () => {
+        axiosInstance({
+            method: 'GET',
+            url: 'staff/department/findAll'
+        }).then((res) => {
+            if (res.data.status) {
+                setDepartments(res.data.departments);
+            } else {
+                Alert.alert('Error', 'Failed to get department list');
+            }
+        }).catch((err) => {
+            console.log(err);
+            Alert.alert('Error', 'Failed to get department list');
+        })
+    }
+
+    // const getRoles = () => {
+    //     axiosInstance({
+    //         method: 'GET',
+    //         url: 'staff/role/findAllRole'
+    //     }).then((res) => {
+    //         if (res.data.status) {
+    //             setRoles(res.data.roles);
+    //         } else {
+    //             Alert.alert('Error', 'Failed to get role list');
+    //         }
+    //     }).catch((err) => {
+    //         console.log(err);
+    //         Alert.alert('Error', 'Failed to get role list');
+    //     })
+    // }
 
     const deleteUser = (id) => {
         Alert.alert('Are you sure to delete ?', '', [
@@ -83,27 +130,40 @@ const User = ({ navigation }) => {
     }
 
     const onSubmit = async (data) => {
-        let token = AsyncStorage.getItem('token')
-        axios({
+        setLoading(true);
+        data.departmentId = data.departmentId.id
+
+        axiosInstance({
             method: 'POST',
-            url: base_url + 'staff/user/create',
-            data: data,
-            headers: { Authorization: token }
+            url: 'staff/user/create',
+            data: data
         }).then((res) => {
-
+            if (res.data.status) {
+                getUsers();
+                closeModal();
+                Alert.alert('Success', 'User created successfully');
+            } else {
+                Alert.alert('Error', 'Failed to create user');
+            }
         }).catch((err) => {
-
+            console.log(err);
+            Alert.alert('Error', 'Failed to create user');
+        }).finally(() => {
+            setLoading(false);
         })
     };
 
     useEffect(() => {
         if (isFocused) {
-
+            getUsers();
+            getDepartments();
+            // getRoles();
         }
     }, [isFocused])
 
     return (
         <View style={styles.container}>
+            <Loading visible={loading} />
             {/* Add Button */}
             <View style={styles.addButtonContainer}>
                 <TouchableOpacity onPress={openModal} style={styles.addButton}>
@@ -197,7 +257,7 @@ const User = ({ navigation }) => {
                     <Text style={{ color: 'red', marginBottom: 10 }}>{errors?.departmentId?.message}</Text>
                     <View style={{ flexDirection: 'row', columnGap: 20, alignItems: 'center', justifyContent: 'center' }}>
                         <Button mode="contained-tonal" contentStyle={{ backgroundColor: '#f76666' }} labelStyle={{ color: '#fff' }} onPress={closeModal} >Close </Button>
-                       {mode !== 'View' && <Button mode="contained" onPress={handleSubmit(onSubmit)} > {mode} </Button>}
+                        {mode !== 'View' && <Button mode="contained" onPress={handleSubmit(onSubmit)} > {mode} </Button>}
                     </View>
                 </ScrollView>
             </Modal>
