@@ -1,11 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
 
-export const base_url = "https://qb7swqmj-9095.inc1.devtunnels.ms/";
+export const base_url = "https://rbdsxt4c-9094.inc1.devtunnels.ms/";
 
 export const Loading = ({visible}) => {
     return (
-        false && <View style={styles.loaderContainer}>
+        visible && <View style={styles.loaderContainer}>
             <ActivityIndicator size="large" color="#3498db" />
             <Text style={styles.loadingText}>Loading...</Text>
         </View>

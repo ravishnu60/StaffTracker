@@ -3,11 +3,12 @@ import { View, ScrollView, Alert } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { TextInput, Button, Text } from 'react-native-paper';
+import { TextInput, Button, Text, Checkbox } from 'react-native-paper';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import axiosInstance from '../utils/axiosInstance';
 import { Loading } from '../utils/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { u } from 'react-native-big-calendar';
 
 
 const Login = () => {
@@ -21,22 +22,50 @@ const Login = () => {
   const schema = yup.object().shape({
     username: yup.string().required('Username is required'),
     password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+    remember: yup.boolean(),
   });
   const { control, handleSubmit, formState: { errors }, reset } = useForm({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(schema),defaultValues: {
+      username: '',
+      password: '',
+      remember: false
+    }
   });
 
+  const patchValueIfExist = async () => {
+    const username = await AsyncStorage.getItem('username');
+    const password = await AsyncStorage.getItem('password');
+    if (username && password) {
+      reset({
+        username: username,
+        password: password,
+        remember: true
+      });
+    }
+  }
+
   const onSubmit = (data) => {
+    console.log(data);
+    
+    if (data.remember) {
+      AsyncStorage.setItem('username', data.username);
+      AsyncStorage.setItem('password', data.password);
+    } else {
+      AsyncStorage.removeItem('username');
+      AsyncStorage.removeItem('password');
+    }
+    
     setLoading(true);
     axiosInstance({
       method: 'POST',
       url: 'staff/auth/login',
-      data: data
+      data: { username: data.username, password: data.password }
     }).then((res) => {
       console.log(res.data);
       if (res.data.status) {
         AsyncStorage.setItem('token', res.data.response.Authorization);
-        if (res.data?.response?.rights === "All") {
+        AsyncStorage.setItem('role', res.data.response.roleName);
+        if (res.data?.response?.roleName === "ADMIN") {
           navigate.navigate('Admin')
         } else {
           navigate.navigate('Home')
@@ -56,6 +85,7 @@ const Login = () => {
   useEffect(() => {
     if (isFocused) {
       reset();
+     patchValueIfExist();
     }
   }, [isFocused])
 
@@ -64,7 +94,7 @@ const Login = () => {
       <Loading visible={loading} />
       <Text variant="headlineLarge" style={{ textAlign: 'center', marginBottom: 20 }}>Login</Text>
       {[
-        { name: 'username', label: 'Username' },
+        { name: 'username', label: 'Email ID' },
         { name: 'password', label: 'Password', secureTextEntry: true },
       ].map(({ name, label, ...rest }) => (
         <View key={name} style={{ marginBottom: 10 }}>
@@ -86,6 +116,20 @@ const Login = () => {
           <Text style={{ color: 'red' }}>{errors[name]?.message}</Text>
         </View>
       ))}
+      {/* check box for remember me */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+        <Controller
+          control={control}
+          name="remember"
+          render={({ field: { onChange, value } }) => (
+            <Checkbox
+              status={value ? 'checked' : 'unchecked'}
+              onPress={() => onChange(!value)}
+            />
+          )}
+        />
+        <Text style={{ marginLeft: 10 }}>Remember Me</Text>
+      </View>
       <Button mode="contained" onPress={handleSubmit(onSubmit)} style={{ marginTop: 20 }}>
         Login
       </Button>

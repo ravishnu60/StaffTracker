@@ -51,7 +51,7 @@ const Department = ({ navigation }) => {
             url: 'staff/department/findAll'
         }).then((res) => {
             if (res.data.status) {
-                setDepartmentList(res.data.departments);
+                setDepartmentList(res.data.responseDto?.departments);
             } else {
                 Alert.alert('Error', 'Failed to get department list');
             }
@@ -70,23 +70,22 @@ const Department = ({ navigation }) => {
             url: 'staff/department/createdept',
             data: data
         }).then((res) => {
-            console.log(res.data);
             if (res.data.status) {
                 getDepartments();
                 closeModal();
-                Alert.alert('Success', 'Department created successfully');
+                Alert.alert('Success', mode === 'Add' ? 'Department created successfully' : 'Department updated successfully');
             } else {
-                Alert.alert('Error', 'Failed to create department');
+                Alert.alert('Error', mode === 'Add' ? 'Failed to create department' : 'Failed to update department');
             }
         }).catch((err) => {
             console.log(err);
-            Alert.alert('Error', 'Failed to create department');
+            Alert.alert('Error', mode === 'Add' ? 'Failed to create department' : 'Failed to update department');
         }).finally(() => {
             setLoading(false);
         })
     }
 
-    const deleteUser = (id) => {
+    const deleteDepartment = (id) => {
         Alert.alert('Are you sure to delete ?', '', [
             {
                 text: 'Cancel',
@@ -95,7 +94,20 @@ const Department = ({ navigation }) => {
             {
                 text: 'Delete',
                 onPress: () => {
-                    Alert.alert('Department deleted!')
+                    setLoading(true);
+                    axiosInstance.delete(`staff/department/delete/${id}`).then((res) => {
+                        if (res.data.status) {
+                            getDepartments();
+                            Alert.alert('Department deleted!')
+                        } else {
+                            Alert.alert('Error', 'Failed to delete department');
+                        }
+                    }).catch((err) => {
+                        console.log(err);
+                        Alert.alert('Error', 'Failed to delete department');
+                    }).finally(() => {
+                        setLoading(false);
+                    })
                 }
             }
         ])
@@ -106,14 +118,18 @@ const Department = ({ navigation }) => {
             getDepartments();
         }
     }, [isFocused]);
-    
+
     return (
         <View style={styles.container}>
             <Loading visible={loading} />
             {/* Add Button */}
             <View style={styles.addButtonContainer}>
-                <TouchableOpacity onPress={openModal} style={styles.addButton}>
-                    <Text style={styles.addButtonLabel}>{mode} Department</Text>
+                <TouchableOpacity onPress={() => {
+                    openModal();
+                    setMode('Add');
+                    reset({});
+                }} style={styles.addButton}>
+                    <Text style={styles.addButtonLabel}>Add Department</Text>
                 </TouchableOpacity>
             </View>
 
@@ -138,7 +154,7 @@ const Department = ({ navigation }) => {
                                     <View style={styles.actionContainer}>
                                         <IconButton icon="eye" iconColor='#18a6d9' size={20} onPress={() => { reset(item); setMode('View'); setModalVisible(true) }} />
                                         <IconButton icon="pencil" iconColor='#01ac24' size={20} onPress={() => { reset(item); setMode('Edit'); setModalVisible(true); }} />
-                                        <IconButton icon="delete" iconColor='#ff5959' size={20} onPress={() => deleteUser(item?.id)} />
+                                        <IconButton icon="delete" iconColor='#ff5959' size={20} onPress={() => deleteDepartment(item?.id)} />
                                     </View>
                                 </DataTable.Cell>
                             </DataTable.Row>

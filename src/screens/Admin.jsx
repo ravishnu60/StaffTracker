@@ -3,6 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
 import User from './User';
 import Department from './Department';
+import CustomHeader from './CustomHeader';
 
 
 const DataList = () => {
@@ -10,6 +11,7 @@ const DataList = () => {
 
   return (
     <View style={styles.container}>
+      <CustomHeader title={'Admin'} />
       {/* Top Menu */}
       <View style={styles.menuContainer}>
         <Text style={[styles.menuItem, selectedTab === 'Users' && styles.activeMenu]} onPress={() => setSelectedTab('Users')}>
@@ -27,7 +29,6 @@ const DataList = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
     backgroundColor: '#f4f4f4',
   },
   menuContainer: {
@@ -35,6 +36,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
     marginBottom: 10,
+    padding: 10,
+    paddingBottom: 0,
   },
   menuItem: {
     flex: 1,

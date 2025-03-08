@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { set } from 'react-hook-form';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-big-calendar';
 import { Button, Text } from 'react-native-paper';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { date } from 'yup';
+import axiosInstance from '../utils/axiosInstance';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function Home({ navigation }) {
   const [selDate, setSelDate] = useState(new Date());
@@ -16,6 +18,7 @@ function Home({ navigation }) {
     { start: new Date('2025-02-18'), unit: 'Chemistry', lesson: 'Organic', status: 'Completed' },
   ];
   const [selEvents, setSelEvents] = useState([]);
+  const [role, setRole] = useState('');
 
   const selectedDate = (date) => {
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
@@ -30,9 +33,50 @@ function Home({ navigation }) {
     )
   }
 
+  const getRoleName = async () => {
+    const role = await AsyncStorage.getItem('role');
+    setRole(role);
+  }
+
+  const getWorkDetails = () => {
+    axiosInstance({
+      method: 'GET',
+      url: 'staff/workdetails/findAll'
+    }).then((res) => {
+      console.log(res.data);
+
+    }).catch((err) => {
+      console.log(err);
+    })
+    // console.log(selEvents);
+  }
+
+  const signOut = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          onPress: () => console.log('Cancel Pressed'),
+          style: 'cancel',
+        },
+        {
+          text: 'OK',
+          onPress: async () => {
+            await AsyncStorage.removeItem('token');
+            await AsyncStorage.removeItem('role');
+            navigation.navigate('Login');
+          }
+        },
+      ]
+    )
+  }
+
   useEffect(() => {
     setSelEvents(events.filter(e => e.start.getDate() === selDate.getDate()));
-
+    getWorkDetails();
+    getRoleName();
   }, [selDate])
 
   return (
@@ -72,6 +116,16 @@ function Home({ navigation }) {
         }
       </ScrollView>
       {/* plus icon for add form */}
+      <TouchableOpacity style={styles.logoutIcon} onPress={signOut} >
+        <FontAwesome name='sign-out' size={25} color='#fff' />
+      </TouchableOpacity>
+
+      {role === 'HOD' &&
+        <TouchableOpacity style={styles.userIcon} onPress={() => navigation.navigate('User', { type: 'HOD' })} >
+          <FontAwesome name='users' size={25} color='#fff' />
+        </TouchableOpacity>
+      }
+
       <TouchableOpacity style={styles.addIcon} onPress={() => navigation.navigate('AddForm')} >
         <FontAwesome name='plus' size={25} color='#fff' />
       </TouchableOpacity>
@@ -109,7 +163,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center'
   },
-  
+  logoutIcon: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    bottom: 150,
+    right: 20,
+    height: 50,
+    width: 50,
+    backgroundColor: '#bb4141',
+    borderRadius: 100
+  },
+  userIcon: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    bottom: 80,
+    right: 20,
+    height: 50,
+    width: 50,
+    backgroundColor: '#41bb69',
+    borderRadius: 100
+  },
   addIcon: {
     position: 'absolute',
     justifyContent: 'center',

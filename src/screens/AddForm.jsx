@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { TextInput, Button, HelperText, Title, useTheme } from 'react-native-paper';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import axiosInstance from '../utils/axiosInstance';
+import { Loading } from '../utils/utils';
+import { useNavigation } from '@react-navigation/native';
 
 const FormScreen = () => {
     const { colors } = useTheme();
+    const navigation = useNavigation();
 
     // React Hook Form
     const { control, handleSubmit, formState: { errors }, } = useForm({
@@ -23,8 +28,7 @@ const FormScreen = () => {
 
     // Date Picker State
     const [date, setDate] = useState(new Date());
-    const [mode, setMode] = useState('date');
-    const [show, setShow] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const onChange = (event, selectedDate) => {
         const currentDate = selectedDate;
@@ -46,31 +50,49 @@ const FormScreen = () => {
 
     // Submit function
     const onSubmit = (data) => {
-        console.log('Form Data:', { date, ...data });
+        setLoading(true);
+        data.date = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
+
+        axiosInstance({
+            method: 'POST',
+            url: 'staff/workdetails/create',
+            data: data
+        }).then((res) => {
+            if (res.data.status) {
+                Alert.alert('Success', 'Work Details saved');
+                navigation.navigate('Home');
+            } else {
+                Alert.alert('Error', 'Failed to save Work Details');
+            }
+        }).catch((err) => {
+            console.log(err);
+            Alert.alert('Error', 'Failed to save Work Details');
+        }).finally(() => {
+            setLoading(false);
+        })
+
     };
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
-            <Title style={{ color: colors.primary }}>Form Input</Title>
-
-            {/* Date Picker */}
-            <Button mode="contained-tonal" style={{ marginVertical: 10, borderRadius: 10 }} onPress={showDatepicker}>
-                Select Date: {date.toDateString()}
-            </Button>
-            {/* {showDatePicker && (
-                <DateTimePicker value={date} mode="date" display="default" onChange={onDateChange} />
-            )} */}
+            <Loading visible={loading} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, columnGap: 15 }}>
+                <FontAwesome name="arrow-left" size={25} color={'gray'} onPress={() => navigation.goBack()} />
+                <Title style={{ color: colors.primary, fontWeight: 'bold', textAlign: 'center' }}>Work Details Form</Title>
+                <View />
+            </View>
 
             {/* Form Fields with Validation */}
             {[
+                { key: 'project', label: 'Project', rules: { required: 'Project is required' } },
                 { key: 'particulars', label: 'Particulars', rules: { required: 'Particulars are required' } },
-                { key: 'unit', label: 'Unit', rules: { required: 'Unit is required' } },
+                { key: 'unit', label: 'Unit', keyboardType: 'numeric', rules: { required: 'Unit is required', pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' } } },
                 { key: 'lessons', label: 'Lessons', rules: { required: 'Lessons are required' } },
                 { key: 'outcome', label: 'Outcome', rules: { required: 'Outcome is required' } },
                 { key: 'hrs', label: 'Hours', keyboardType: 'numeric', rules: { required: 'Hours are required', pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' } } },
-                { key: 'num', label: 'Number', keyboardType: 'numeric', rules: { required: 'Number is required', pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' } } },
+                { key: 'num', label: 'Number', rules: { required: 'Number is required' } }, //pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' }
                 { key: 'status', label: 'Status', rules: { required: 'Status is required' } },
-                { key: 'url', label: 'URL', rules: { required: 'URL is required', pattern: { value: /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/, message: 'Enter a valid URL' } } },
+                // { key: 'url', label: 'URL', rules: { required: 'URL is required', pattern: { value: /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/, message: 'Enter a valid URL' } } },
             ].map((field) => (
                 <View key={field.key}>
                     <Controller
@@ -90,9 +112,17 @@ const FormScreen = () => {
                             />
                         )}
                     />
-                    {errors[field.key] && <HelperText type="error">{errors[field.key]?.message}</HelperText>}
+                    {errors[field.key] && <HelperText style={{ paddingTop: 0 }} type="error">{errors[field.key]?.message}</HelperText>}
                 </View>
             ))}
+
+            {/* Date Picker */}
+            <Button mode="contained-tonal" style={{ marginVertical: 10, borderRadius: 10 }} onPress={showDatepicker}>
+                Select Date: {date.toDateString()}
+            </Button>
+            {/* {showDatePicker && (
+                <DateTimePicker value={date} mode="date" display="default" onChange={onDateChange} />
+            )} */}
 
             {/* Submit Button */}
             <Button mode="contained" onPress={handleSubmit(onSubmit)} style={styles.button}>

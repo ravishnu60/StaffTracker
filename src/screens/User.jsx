@@ -1,34 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { Button, Modal, Text, TextInput, DataTable, IconButton } from 'react-native-paper';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { useForm, Controller } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Dropdown } from 'react-native-element-dropdown';
-import axios from 'axios';
-import { base_url, Loading } from '../utils/utils';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Loading } from '../utils/utils';
 import { useIsFocused } from '@react-navigation/native';
 import axiosInstance from '../utils/axiosInstance';
-import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
 
-const users = [
-    { id: 1, name: 'Alice Johnson', email: 'qRn9Z@example.com', role: 'Admin' },
-    { id: 2, name: 'Bob Smith', email: 'YjM9g@example.com', role: 'Manager' },
-    { id: 3, name: 'Charlie Brown', email: 'HqWt3@example.com', role: 'Employee' },
-];
+const columns = ["Name", 'Email', 'Dept', 'Role', 'Actions'];
 
-// Department options
-const departments = [
-    { id: 1, name: 'Engineering' },
-    { id: 2, name: 'Marketing' },
-    { id: 3, name: 'Human Resources' },
-];
-
-const columns = ["Name", 'Email', 'Role', 'Actions'];
-
-const User = ({ navigation }) => {
-
+const User = ({ navigation, route }) => {
     const schema = yup.object().shape({
         name: yup.string().required('Name is required'),
         addressingname: yup.string().required('Addressing Name is required'),
@@ -68,9 +52,12 @@ const User = ({ navigation }) => {
 
     const getUsers = () => {
         setLoading(true);
-        axiosInstance.get('staff/user/findAll').then((res) => {
+        const url = route?.params?.type === 'HOD' ? 'staff/workdetails/userList' : 'staff/user/findAll'
+        axiosInstance.get(url).then((res) => {
+            console.log(res.data);
+
             if (res.data.status) {
-                setUserList(res.data.users);
+                setUserList(res.data.responseDto?.userInfos || []);
             } else {
                 Alert.alert('Error', 'Failed to get user list');
             }
@@ -88,7 +75,7 @@ const User = ({ navigation }) => {
             url: 'staff/department/findAll'
         }).then((res) => {
             if (res.data.status) {
-                setDepartments(res.data.departments);
+                setDepartments(res.data.responseDto?.departments);
             } else {
                 Alert.alert('Error', 'Failed to get department list');
             }
@@ -98,21 +85,21 @@ const User = ({ navigation }) => {
         })
     }
 
-    // const getRoles = () => {
-    //     axiosInstance({
-    //         method: 'GET',
-    //         url: 'staff/role/findAllRole'
-    //     }).then((res) => {
-    //         if (res.data.status) {
-    //             setRoles(res.data.roles);
-    //         } else {
-    //             Alert.alert('Error', 'Failed to get role list');
-    //         }
-    //     }).catch((err) => {
-    //         console.log(err);
-    //         Alert.alert('Error', 'Failed to get role list');
-    //     })
-    // }
+    const getRoles = () => {
+        axiosInstance({
+            method: 'GET',
+            url: 'staff/role/findAllRole'
+        }).then((res) => {
+            if (res.data.status) {
+                setRoles(res.data.responseDto?.roles);
+            } else {
+                Alert.alert('Error', 'Failed to get role list');
+            }
+        }).catch((err) => {
+            console.log(err);
+            Alert.alert('Error', 'Failed to get role list');
+        })
+    }
 
     const deleteUser = (id) => {
         Alert.alert('Are you sure to delete ?', '', [
@@ -123,31 +110,70 @@ const User = ({ navigation }) => {
             {
                 text: 'Delete',
                 onPress: () => {
-                    Alert.alert('User deleted!')
+                    setLoading(true);
+                    axiosInstance.delete(`staff/user/delete/${id}`).then((res) => {
+                        if (res.data.status) {
+                            getUsers();
+                            Alert.alert('User deleted!')
+                        } else {
+                            Alert.alert('Error', 'Failed to delete user');
+                        }
+                    }).catch((err) => {
+                        console.log(err);
+                        Alert.alert('Error', 'Failed to delete user');
+                    }).finally(() => {
+                        setLoading(false);
+                    })
                 }
             }
         ])
     }
+    console.log(roles);
 
     const onSubmit = async (data) => {
         setLoading(true);
-        data.departmentId = data.departmentId.id
+
+        let temp = {
+            name: data.name,
+            addressingname: data.addressingname,
+            email: data.email,
+            mobilenumber: data.mobilenumber,
+            password: data.password,
+            status: data.status,
+            roleId: data.roleId,
+            departmentId: data.departmentId.id
+        };
+        if (mode === 'Edit') {
+            temp.id = data.id
+        }
+        temp.departmentId = data.departmentId.id
+        if (route?.params?.type === 'HOD') {
+            temp.roleId = roles.find(role => role.role === 'STAFF').id
+        } else {
+            temp.roleId = roles.find(role => role.role === 'HOD').id
+        }
+
+        console.log(temp);
+
 
         axiosInstance({
             method: 'POST',
             url: 'staff/user/create',
-            data: data
+            data: temp
         }).then((res) => {
+            console.log(res.data);
+
             if (res.data.status) {
+
                 getUsers();
                 closeModal();
-                Alert.alert('Success', 'User created successfully');
+                Alert.alert('Success', mode === 'Add' ? 'User created successfully' : 'User updated successfully');
             } else {
-                Alert.alert('Error', 'Failed to create user');
+                Alert.alert('Error', mode === 'Add' ? 'Failed to create user' : 'Failed to update user');
             }
         }).catch((err) => {
             console.log(err);
-            Alert.alert('Error', 'Failed to create user');
+            Alert.alert('Error', mode === 'Add' ? 'Failed to create user' : 'Failed to update user');
         }).finally(() => {
             setLoading(false);
         })
@@ -157,7 +183,7 @@ const User = ({ navigation }) => {
         if (isFocused) {
             getUsers();
             getDepartments();
-            // getRoles();
+            getRoles();
         }
     }, [isFocused])
 
@@ -165,8 +191,17 @@ const User = ({ navigation }) => {
         <View style={styles.container}>
             <Loading visible={loading} />
             {/* Add Button */}
-            <View style={styles.addButtonContainer}>
-                <TouchableOpacity onPress={openModal} style={styles.addButton}>
+            <View style={[styles.addButtonContainer, route?.params?.type === 'HOD' && { justifyContent: 'space-between' }]}>
+                {
+                    route?.params?.type === 'HOD' && <>
+                        <FontAwesome name="arrow-left" size={25} color="gray" onPress={() => navigation.goBack()} />
+                        <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Users</Text></>
+                }
+                <TouchableOpacity onPress={() => {
+                    openModal();
+                    setMode('Add');
+                    reset({});
+                }} style={styles.addButton}>
                     <Text style={styles.addButtonLabel}>Add User</Text>
                 </TouchableOpacity>
             </View>
@@ -175,21 +210,22 @@ const User = ({ navigation }) => {
             <DataTable>
                 <DataTable.Header>
                     {columns.map((column) => (
-                        <DataTable.Title key={column} style={{ flex: column === 'Actions' ? 1 : column === 'Email' ? 3 : 2, paddingLeft: 5 }}>
+                        <DataTable.Title key={column} style={{ flex: column === 'Actions' ? 1 : column === 'email' ? 3 : 2, paddingLeft: 5 }}>
                             <Text style={styles.tableHeader}>{column}</Text>
                         </DataTable.Title>
                     ))}
                 </DataTable.Header>
 
                 <FlatList
-                    data={users}
+                    data={userList}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
                         <>
-                            <DataTable.Row>
+                            <DataTable.Row onPress={() => toggleExpand(item.id)}>
                                 <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.name}</Text></DataTable.Cell>
                                 <DataTable.Cell style={{ flex: 3 }}><Text style={styles.tableCell} numberOfLines={1}>{item.email}</Text></DataTable.Cell>
-                                <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.role}</Text></DataTable.Cell>
+                                <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.department?.departmentName || 'N/A'}</Text></DataTable.Cell>
+                                <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.role.role}</Text></DataTable.Cell>
                                 <DataTable.Cell style={{ flex: 1 }}>
                                     <IconButton icon={expandedRow === item.id ? "chevron-up" : "chevron-down"} iconColor='#000' size={20} onPress={() => toggleExpand(item.id)} />
                                 </DataTable.Cell>
@@ -197,8 +233,8 @@ const User = ({ navigation }) => {
 
                             {expandedRow === item.id && (
                                 <View style={[styles.actionContainer, { backgroundColor: '#e9e9e9' }]}>
-                                    <IconButton icon="eye" iconColor='#18a6d9' size={20} onPress={() => { reset(item); setMode('View'); setModalVisible(true) }} />
-                                    <IconButton icon="pencil" iconColor='#01ac24' size={20} onPress={() => { reset(item); setMode('Edit'); setModalVisible(true); }} />
+                                    <IconButton icon="eye" iconColor='#18a6d9' size={20} onPress={() => { reset({ ...item, departmentId: item.department }); setMode('View'); setModalVisible(true) }} />
+                                    <IconButton icon="pencil" iconColor='#01ac24' size={20} onPress={() => { reset({ ...item, departmentId: item.department, roleId: item.role.id }); setMode('Edit'); setModalVisible(true); }} />
                                     <IconButton icon="delete" iconColor='#ff5959' size={20} onPress={() => deleteUser(item?.id)} />
                                 </View>
                             )}
@@ -206,6 +242,13 @@ const User = ({ navigation }) => {
                     )}
                 />
             </DataTable>
+
+            {
+                loading === false && userList?.length === 0 &&
+                <View style={styles.noDataContainer}>
+                    <Text style={styles.noDataText}>No data found</Text>
+                </View>
+            }
 
             <Modal visible={modalVisible} onDismiss={closeModal} contentContainerStyle={styles.modal}>
                 <ScrollView contentContainerStyle={{ padding: 10 }}>
@@ -216,7 +259,7 @@ const User = ({ navigation }) => {
                         { name: 'email', label: 'Email', keyboardType: 'email-address' },
                         { name: 'mobilenumber', label: 'Mobile Number', keyboardType: 'phone-pad' },
                         { name: 'password', label: 'Password', secureTextEntry: true },
-                    ].map(({ name, label, ...rest }) => (
+                    ].filter((field) => mode === 'Add' ? true : field.name !== 'password').map(({ name, label, ...rest }) => (
                         <View key={name}>
                             <Controller
                                 control={control}
@@ -247,7 +290,7 @@ const User = ({ navigation }) => {
                                 style={[styles.input, styles.dropdown]}
                                 placeholder='Select Department'
                                 valueField='id'
-                                labelField='name'
+                                labelField='departmentName'
                                 value={value}
                                 onChange={onChange}
                                 disable={mode === 'View'}
@@ -272,8 +315,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#f4f4f4',
     },
     addButtonContainer: {
-        alignItems: 'flex-end',
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        alignItems: 'center',
         marginBottom: 10,
+        padding: 5
     },
     addButton: {
         backgroundColor: '#6200ee',
@@ -335,6 +381,16 @@ const styles = StyleSheet.create({
     },
     submitButton: {
         marginTop: 10,
+    },
+
+    noDataContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    noDataText: {
+        fontSize: 16,
+        color: '#666',
     },
 });
 
