@@ -4,6 +4,7 @@ import { Text } from 'react-native-paper';
 import User from './User';
 import Department from './Department';
 import CustomHeader from './CustomHeader';
+import Holidays from './Holidays';
 
 
 const DataList = () => {
@@ -20,8 +21,11 @@ const DataList = () => {
         <Text style={[styles.menuItem, selectedTab === 'Departments' && styles.activeMenu]} onPress={() => setSelectedTab('Departments')}>
           Departments
         </Text>
+        <Text style={[styles.menuItem, selectedTab === 'Holidays' && styles.activeMenu]} onPress={() => setSelectedTab('Holidays')}>
+          Holidays
+        </Text>
       </View>
-      { selectedTab === 'Users' ? <User /> : <Department />}
+      { selectedTab === 'Users' ? <User /> : selectedTab=== "Departments" ? <Department /> : <Holidays />}
     </View>
   );
 };

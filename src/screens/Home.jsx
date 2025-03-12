@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { set } from 'react-hook-form';
 import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-big-calendar';
@@ -7,9 +7,11 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import { date } from 'yup';
 import axiosInstance from '../utils/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ContextData } from '../navigations/MainNavigation';
 
 function Home({ navigation }) {
   const [selDate, setSelDate] = useState(new Date());
+  const contextVal= useContext(ContextData);
   const events = [
     { start: new Date('2025-02-14'), unit: 'Math', lesson: 'Algebra', status: 'Completed' },
     { start: new Date('2025-02-15'), unit: 'Science', lesson: 'Physics', status: 'Pending' },
@@ -25,7 +27,7 @@ function Home({ navigation }) {
   }
 
   const RenderEvent = (e) => {
-    console.log(e);
+    // console.log(e);
     return (
       // <View style={{flexGrow:1, alignItems:'center'}}>
       <View style={{ width: 4, height: 4, borderRadius: 100, backgroundColor: 'red' }} />
@@ -76,8 +78,12 @@ function Home({ navigation }) {
   useEffect(() => {
     setSelEvents(events.filter(e => e.start.getDate() === selDate.getDate()));
     getWorkDetails();
-    getRoleName();
   }, [selDate])
+
+  useEffect(() => {
+    getRoleName();
+  }, [])
+
 
   return (
     <View style={styles.container}>
@@ -120,8 +126,8 @@ function Home({ navigation }) {
         <FontAwesome name='sign-out' size={25} color='#fff' />
       </TouchableOpacity>
 
-      {role === 'HOD' &&
-        <TouchableOpacity style={styles.userIcon} onPress={() => navigation.navigate('User', { type: 'HOD' })} >
+      {contextVal.user?.roleName === 'HOD' &&
+        <TouchableOpacity style={styles.userIcon} onPress={() => navigation.navigate('User', { type: 'HOD', departmantName: contextVal?.user?.departmentName })} >
           <FontAwesome name='users' size={25} color='#fff' />
         </TouchableOpacity>
       }

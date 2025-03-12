@@ -50,26 +50,27 @@ const FormScreen = () => {
 
     // Submit function
     const onSubmit = (data) => {
-        setLoading(true);
+        // setLoading(true);
         data.date = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
-
-        axiosInstance({
-            method: 'POST',
-            url: 'staff/workdetails/create',
-            data: data
-        }).then((res) => {
-            if (res.data.status) {
-                Alert.alert('Success', 'Work Details saved');
-                navigation.navigate('Home');
-            } else {
-                Alert.alert('Error', 'Failed to save Work Details');
-            }
-        }).catch((err) => {
-            console.log(err);
-            Alert.alert('Error', 'Failed to save Work Details');
-        }).finally(() => {
-            setLoading(false);
-        })
+        console.log(data);
+        
+        // axiosInstance({
+        //     method: 'POST',
+        //     url: 'staff/workdetails/create',
+        //     data: data
+        // }).then((res) => {
+        //     if (res.data.status) {
+        //         Alert.alert('Success', 'Work Details saved');
+        //         navigation.navigate('Home');
+        //     } else {
+        //         Alert.alert('Error', 'Failed to save Work Details');
+        //     }
+        // }).catch((err) => {
+        //     console.log(err);
+        //     Alert.alert('Error', 'Failed to save Work Details');
+        // }).finally(() => {
+        //     setLoading(false);
+        // })
 
     };
 

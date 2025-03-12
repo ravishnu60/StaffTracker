@@ -23,11 +23,11 @@ const User = ({ navigation, route }) => {
         status: yup.boolean(),
         departmentId: yup.object().required('Department ID is required'),
     });
-    const { control, handleSubmit, formState: { errors }, reset } = useForm({
+    const { control, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm({
         resolver: yupResolver(schema),
         defaultValues: {
             role: 2,
-            status: true
+            status: true,
         }
     });
 
@@ -40,7 +40,15 @@ const User = ({ navigation, route }) => {
     const [mode, setMode] = useState('Add');
     const [expandedRow, setExpandedRow] = useState(null);
 
-    const openModal = () => setModalVisible(true);
+    const openModal = () => {
+        if (route?.params?.departmantName) {
+            let find = departments.filter(item => item.departmentName === route?.params?.departmantName);
+            if (find.length > 0) {
+                setValue('departmentId', { id: find[0].id, departmentName: find[0].departmentName }, { shouldValidate: true });
+            }
+        }
+        setModalVisible(true);
+    }
     const closeModal = () => {
         reset({});
         setModalVisible(false);
@@ -52,7 +60,7 @@ const User = ({ navigation, route }) => {
 
     const getUsers = () => {
         setLoading(true);
-        const url = route?.params?.type === 'HOD' ? 'staff/workdetails/userList' : 'staff/user/findAll'
+        const url = route?.params?.type === 'HOD' ? 'staff/user/getDeparmentUsers' : 'staff/user/findAll'
         axiosInstance.get(url).then((res) => {
             console.log(res.data);
 
@@ -68,6 +76,9 @@ const User = ({ navigation, route }) => {
             setLoading(false);
         })
     }
+
+    const department = watch('departmentId');
+    console.log("departments", route?.params?.departmantName, department);
 
     const getDepartments = () => {
         axiosInstance({
@@ -128,11 +139,9 @@ const User = ({ navigation, route }) => {
             }
         ])
     }
-    console.log(roles);
 
     const onSubmit = async (data) => {
         setLoading(true);
-
         let temp = {
             name: data.name,
             addressingname: data.addressingname,
@@ -152,19 +161,12 @@ const User = ({ navigation, route }) => {
         } else {
             temp.roleId = roles.find(role => role.role === 'HOD').id
         }
-
-        console.log(temp);
-
-
         axiosInstance({
             method: 'POST',
             url: 'staff/user/create',
             data: temp
         }).then((res) => {
-            console.log(res.data);
-
             if (res.data.status) {
-
                 getUsers();
                 closeModal();
                 Alert.alert('Success', mode === 'Add' ? 'User created successfully' : 'User updated successfully');
@@ -198,9 +200,9 @@ const User = ({ navigation, route }) => {
                         <Text style={{ fontSize: 20, fontWeight: 'bold' }}>Users</Text></>
                 }
                 <TouchableOpacity onPress={() => {
-                    openModal();
                     setMode('Add');
                     reset({});
+                    openModal();
                 }} style={styles.addButton}>
                     <Text style={styles.addButtonLabel}>Add User</Text>
                 </TouchableOpacity>
@@ -281,23 +283,27 @@ const User = ({ navigation, route }) => {
                         </View >
 
                     ))}
-                    <Controller
-                        control={control}
-                        name='departmentId'
-                        render={({ field: { onChange, value } }) =>
-                            <Dropdown
-                                data={departments}
-                                style={[styles.input, styles.dropdown]}
-                                placeholder='Select Department'
-                                valueField='id'
-                                labelField='departmentName'
-                                value={value}
-                                onChange={onChange}
-                                disable={mode === 'View'}
+                    {route?.params?.type !== 'HOD' &&
+                        <>
+                            <Controller
+                                control={control}
+                                name='departmentId'
+                                render={({ field: { onChange, value } }) =>
+                                    <Dropdown
+                                        data={departments}
+                                        style={[styles.input, styles.dropdown]}
+                                        placeholder='Select Department'
+                                        valueField='id'
+                                        labelField='departmentName'
+                                        value={value}
+                                        onChange={onChange}
+                                        disable={mode === 'View'}
+                                    />
+                                }
                             />
-                        }
-                    />
-                    <Text style={{ color: 'red', marginBottom: 10 }}>{errors?.departmentId?.message}</Text>
+                            <Text style={{ color: 'red', marginBottom: 10 }}>{errors?.departmentId?.message}</Text>
+                        </>
+                    }
                     <View style={{ flexDirection: 'row', columnGap: 20, alignItems: 'center', justifyContent: 'center' }}>
                         <Button mode="contained-tonal" contentStyle={{ backgroundColor: '#f76666' }} labelStyle={{ color: '#fff' }} onPress={closeModal} >Close </Button>
                         {mode !== 'View' && <Button mode="contained" onPress={handleSubmit(onSubmit)} > {mode} </Button>}

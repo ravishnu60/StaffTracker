@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -9,11 +9,13 @@ import axiosInstance from '../utils/axiosInstance';
 import { Loading } from '../utils/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { u } from 'react-native-big-calendar';
+import { ContextData } from '../navigations/MainNavigation';
 
 
 const Login = () => {
   const navigate = useNavigation();
   const isFocused = useIsFocused();
+  const contextVal= useContext(ContextData);
 
   // loading
   const [loading, setLoading] = useState(false);
@@ -61,10 +63,9 @@ const Login = () => {
       url: 'staff/auth/login',
       data: { username: data.username, password: data.password }
     }).then((res) => {
-      console.log(res.data);
       if (res.data.status) {
         AsyncStorage.setItem('token', res.data.response.Authorization);
-        AsyncStorage.setItem('role', res.data.response.roleName);
+        contextVal.setUser(res.data.response);
         if (res.data?.response?.roleName === "ADMIN") {
           navigate.navigate('Admin')
         } else {
