@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { TextInput, Button, HelperText, Title, useTheme } from 'react-native-paper';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import axiosInstance from '../utils/axiosInstance';
-import { Loading } from '../utils/utils';
+import { dateStr, Loading } from '../utils/utils';
 import { useNavigation } from '@react-navigation/native';
 
-const FormScreen = () => {
+const FormScreen = ({ route }) => {
     const { colors } = useTheme();
     const navigation = useNavigation();
 
     // React Hook Form
-    const { control, handleSubmit, formState: { errors }, } = useForm({
+    const { control, handleSubmit, formState: { errors }, reset } = useForm({
         defaultValues: {
             particulars: '',
             unit: '',
@@ -50,29 +50,34 @@ const FormScreen = () => {
 
     // Submit function
     const onSubmit = (data) => {
-        // setLoading(true);
-        data.date = date.getFullYear() + '-' + ('0' + (date.getMonth() + 1)).slice(-2) + '-' + ('0' + date.getDate()).slice(-2);
-        console.log(data);
-        
-        // axiosInstance({
-        //     method: 'POST',
-        //     url: 'staff/workdetails/create',
-        //     data: data
-        // }).then((res) => {
-        //     if (res.data.status) {
-        //         Alert.alert('Success', 'Work Details saved');
-        //         navigation.navigate('Home');
-        //     } else {
-        //         Alert.alert('Error', 'Failed to save Work Details');
-        //     }
-        // }).catch((err) => {
-        //     console.log(err);
-        //     Alert.alert('Error', 'Failed to save Work Details');
-        // }).finally(() => {
-        //     setLoading(false);
-        // })
+        setLoading(true);
+
+        axiosInstance({
+            method: 'POST',
+            url: 'staff/workdetails/create',
+            data: { ...data, date: dateStr(date) }
+        }).then((res) => {
+            if (res.data.status) {
+                Alert.alert('Success', 'Work Details saved');
+                navigation.navigate('Home');
+            } else {
+                Alert.alert('Error', 'Failed to save Work Details');
+            }
+        }).catch((err) => {
+            console.log(err);
+            Alert.alert('Error', 'Failed to save Work Details');
+        }).finally(() => {
+            setLoading(false);
+        })
 
     };
+
+    useEffect(() => {
+        if (route.params) {
+            reset(route.params || {});
+            route.params.start && setDate(new Date(route.params.start));
+        }
+    }, [route.params]);
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -93,7 +98,7 @@ const FormScreen = () => {
                 { key: 'hrs', label: 'Hours', keyboardType: 'numeric', rules: { required: 'Hours are required', pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' } } },
                 { key: 'num', label: 'Number', rules: { required: 'Number is required' } }, //pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' }
                 { key: 'status', label: 'Status', rules: { required: 'Status is required' } },
-                // { key: 'url', label: 'URL', rules: { required: 'URL is required', pattern: { value: /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/, message: 'Enter a valid URL' } } },
+                { key: 'url', label: 'URL', rules: { pattern: { value: /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/, message: 'Enter a valid URL' } } },
             ].map((field) => (
                 <View key={field.key}>
                     <Controller
@@ -118,8 +123,8 @@ const FormScreen = () => {
             ))}
 
             {/* Date Picker */}
-            <Button mode="contained-tonal" style={{ marginVertical: 10, borderRadius: 10 }} onPress={showDatepicker}>
-                Select Date: {date.toDateString()}
+            <Button style={{ marginVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.primary }} onPress={showDatepicker}>
+                {date.toDateString()}
             </Button>
             {/* {showDatePicker && (
                 <DateTimePicker value={date} mode="date" display="default" onChange={onDateChange} />

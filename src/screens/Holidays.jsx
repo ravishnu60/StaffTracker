@@ -2,50 +2,61 @@ import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { Button, Modal, Text, TextInput, DataTable, IconButton } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
+import { Dropdown } from 'react-native-element-dropdown';
+
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Loading } from '../utils/utils';
+import { dateStr, Loading } from '../utils/utils';
 import { useIsFocused } from '@react-navigation/native';
 import axiosInstance from '../utils/axiosInstance';
 
 const columns = ["Date", 'type'];
 
-const sampleData= [
+const sampleData = [
     { id: 1, date: '2022-01-01', type: 'Holiday' },
     { id: 2, date: '2022-01-26', type: 'Half day' },
 ]
 
 const Holidays = ({ navigation }) => {
+
     const schema = yup.object().shape({
-        departmentName: yup.string().required('Name is required')
+        type: yup.object().required('Type is required'),
     });
-    const { control, handleSubmit, formState: { errors }, reset } = useForm({
+    const { control, handleSubmit, setValue, formState: { errors }, reset } = useForm({
         resolver: yupResolver(schema),
-        defaultValues: {
-            departmentName: null
-        }
+        defaultValues: { type: null }
     });
 
+    const types = [
+        { label: 'Holiday', value: 'Holiday' },
+        { label: 'Half day', value: 'Halfday' }
+    ]
+
     const isFocused = useIsFocused();
-    const [departmentList, setDepartmentList] = useState([]);
+    const [holidayList, setHolidayList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [mode, setMode] = useState('Add');
+    const [date, setDate] = useState(new Date());
 
-    const openModal = () => setModalVisible(true);
+
+    const openModal = () => {
+        setModalVisible(true);
+    }
     const closeModal = () => {
         reset({});
         setModalVisible(false);
     }
 
-    const getDepartments = () => {
+    const getHolidays = () => {
         setLoading(true);
         axiosInstance({
             method: 'GET',
-            url: 'staff/department/findAll'
+            url: 'staff/holiday/getAll'
         }).then((res) => {
             if (res.data.status) {
-                setDepartmentList(res.data.responseDto?.departments);
+                setHolidayList(res.data?.responseDto.holidays);
             } else {
                 Alert.alert('Error', 'Failed to get department list');
             }
@@ -57,29 +68,39 @@ const Holidays = ({ navigation }) => {
         })
     }
 
-    const createDepartment = (data) => {
+    console.log("error", errors);
+
+    const createHoliday = (data) => {
+        let temp = { date: dateStr(date), type: data.type.value }
+
+        if (mode === 'Edit') 
+            temp.id = data.id
+        console.log("temp", temp);
+        
         setLoading(true);
         axiosInstance({
             method: 'POST',
-            url: 'staff/department/createdept',
-            data: data
+            url: 'staff/holiday/create',
+            data: temp
         }).then((res) => {
+            console.log(res.data);
+            
             if (res.data.status) {
-                getDepartments();
+                getHolidays();
                 closeModal();
-                Alert.alert('Success', mode === 'Add' ? 'Department created successfully' : 'Department updated successfully');
+                Alert.alert('Success', mode === 'Add' ? 'Holiday created successfully' : 'Holiday updated successfully');
             } else {
-                Alert.alert('Error', mode === 'Add' ? 'Failed to create department' : 'Failed to update department');
+                Alert.alert('Error', mode === 'Add' ?  res.data.information?.message : 'Failed to update Holiday');
             }
         }).catch((err) => {
-            console.log(err);
-            Alert.alert('Error', mode === 'Add' ? 'Failed to create department' : 'Failed to update department');
+            console.log("err", err);
+            Alert.alert('Error', mode === 'Add' ? 'Failed to create Holiday' : 'Failed to update Holiday');
         }).finally(() => {
             setLoading(false);
         })
     }
 
-    const deleteDepartment = (id) => {
+    const deleteHoliday = (id) => {
         Alert.alert('Are you sure to delete ?', '', [
             {
                 text: 'Cancel',
@@ -89,16 +110,16 @@ const Holidays = ({ navigation }) => {
                 text: 'Delete',
                 onPress: () => {
                     setLoading(true);
-                    axiosInstance.delete(`staff/department/delete/${id}`).then((res) => {
+                    axiosInstance.delete(`staff/holiday/delete/${id}`).then((res) => {                      
                         if (res.data.status) {
-                            getDepartments();
-                            Alert.alert('Department deleted!')
+                            getHolidays();
+                            Alert.alert('Holiday deleted!')
                         } else {
-                            Alert.alert('Error', 'Failed to delete department');
+                            Alert.alert('Error', 'Failed to delete Holiday');
                         }
                     }).catch((err) => {
                         console.log(err);
-                        Alert.alert('Error', 'Failed to delete department');
+                        Alert.alert('Error', 'Failed to delete Holiday');
                     }).finally(() => {
                         setLoading(false);
                     })
@@ -107,9 +128,26 @@ const Holidays = ({ navigation }) => {
         ])
     }
 
+    const onChange = (event, selectedDate) => {
+        const currentDate = selectedDate;
+        setDate(currentDate);
+    };
+    const showMode = (currentMode) => {
+        DateTimePickerAndroid.open({
+            value: date,
+            onChange,
+            mode: currentMode,
+            is24Hour: true,
+        });
+    };
+
+    const showDatepicker = () => {
+        showMode('date');
+    };
+
     useEffect(() => {
         if (isFocused) {
-            getDepartments();
+            getHolidays();
         }
     }, [isFocused]);
 
@@ -138,51 +176,57 @@ const Holidays = ({ navigation }) => {
                 </DataTable.Header>
 
                 <FlatList
-                    data={sampleData}
+                    data={holidayList}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
                         <>
                             <DataTable.Row>
-                                <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.date}</Text></DataTable.Cell>
+                                <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{dateStr(new Date(item.date))}</Text></DataTable.Cell>
                                 <DataTable.Cell style={{ flex: 2 }}><Text style={styles.tableCell} numberOfLines={1}>{item.type}</Text></DataTable.Cell>
+                                <DataTable.Cell style={{ flex: 1 }}>
+                                    <View style={styles.actionContainer}>
+                                        <IconButton icon="pencil" iconColor='#01ac24' size={20} onPress={() => { reset({...item, type: types.find((e) => e.value === item.type)}); setMode('Edit'); setModalVisible(true); }} />
+                                        <IconButton icon="delete" iconColor='#ff5959' size={20} onPress={() => deleteHoliday(item?.id)} />
+                                    </View>
+                                </DataTable.Cell>
                             </DataTable.Row>
                         </>
                     )}
                 />
+                {loading === false && holidayList.length === 0 && <Text style={{ textAlign: 'center', marginTop: 20 }}>No data found</Text>}
             </DataTable>
 
             <Modal visible={modalVisible} onDismiss={closeModal} contentContainerStyle={styles.modal}>
                 <ScrollView contentContainerStyle={{ padding: 10 }}>
-                    <Text style={{ textAlign: 'center', marginBottom: 20, fontSize: 20 }}>{mode} Department</Text>
-                    {[
-                        { name: 'departmentName', label: 'Name' }
-                    ].map(({ name, label, ...rest }) => (
-                        <View key={name}>
-                            <Controller
-                                control={control}
-                                name={name}
-                                render={({ field: { onChange, onBlur, value } }) => (
-                                    <TextInput
-                                        label={label}
-                                        value={value?.toString() || ''}
-                                        onBlur={onBlur}
-                                        onChangeText={onChange}
-                                        error={!!errors[name]}
-                                        style={styles.input}
-                                        {...rest}
-                                        readOnly={mode === 'View'}
-                                    />
-                                )}
-                            />
-                            <Text style={{ color: 'red', marginBottom: 10 }}>{errors[name]?.message}</Text>
-                        </View >
+                    <Text style={{ textAlign: 'center', marginBottom: 20, fontSize: 20 }}>{mode} Holiday</Text>
 
-                    ))}
+                    <View>
+                        <Controller
+                            control={control}
+                            name='type'
+                            render={({ field: { onChange, value } }) =>
+                                <Dropdown
+                                    data={types}
+                                    style={[styles.input, styles.dropdown]}
+                                    placeholder='Select Type'
+                                    valueField='value'
+                                    labelField='label'
+                                    value={value}
+                                    onChange={onChange}
+                                    disable={mode === 'View'}
+                                />
+                            }
+                        />
+                        <Text style={{ color: 'red', marginBottom: 10 }}>{errors?.type?.message}</Text>
+                    </View >
 
-                    <Text style={{ color: 'red', marginBottom: 10 }}>{errors?.departmentId?.message}</Text>
+                    <Text style={{}}>Select Date</Text>
+                    <Button mode="contained-tonal" style={{ marginVertical: 10, borderRadius: 10, marginBottom: 20 }} onPress={showDatepicker}>
+                        {date.toDateString()}
+                    </Button>
                     <View style={{ flexDirection: 'row', columnGap: 20, alignItems: 'center', justifyContent: 'center' }}>
                         <Button mode="contained-tonal" contentStyle={{ backgroundColor: '#f76666' }} labelStyle={{ color: '#fff' }} onPress={closeModal} >Close </Button>
-                        {mode !== 'View' && <Button mode="contained" onPress={handleSubmit(createDepartment)} > {mode} </Button>}
+                        {mode !== 'View' && <Button mode="contained" onPress={handleSubmit(createHoliday)} > {mode} </Button>}
                     </View>
                 </ScrollView>
             </Modal>

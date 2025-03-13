@@ -13,7 +13,7 @@ function MainNavigation() {
   const [user, setUser] = useState({});
   return (
     <ContextData.Provider value={{ user, setUser }}>
-      <Stack.Navigator initialRouteName='Admin' screenOptions={{ headerShown: false }}>
+      <Stack.Navigator initialRouteName='Login' screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Register" component={Register} />
         <Stack.Screen name="Admin" component={Admin} />
