@@ -21,11 +21,13 @@
     "react-native": "0.77.0",
     "react-native-big-calendar": "^4.17.1",
     "react-native-element-dropdown": "^2.12.4",
+    "react-native-fs": "^2.20.0",
     "react-native-paper": "^5.13.1",
     "react-native-reanimated": "^3.16.7",
     "react-native-safe-area-context": "^5.1.0",
     "react-native-screens": "^4.6.0",
     "react-native-vector-icons": "^10.2.0",
+    "xlsx": "^0.18.5",
     "yup": "^1.6.1"
   },
   "devDependencies": {

@@ -1,14 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { set } from 'react-hook-form';
 import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-big-calendar';
 import { Button, Text } from 'react-native-paper';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { date } from 'yup';
 import axiosInstance from '../utils/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ContextData } from '../navigations/MainNavigation';
-import { dateStr, getMonthStartAndEnd, Loading } from '../utils/utils';
+import { dateStr, getMonthStartAndEnd, Loading, writeDataAndDownloadExcelFile } from '../utils/utils';
 
 function Home({ navigation }) {
   const [selDate, setSelDate] = useState(new Date());
@@ -151,7 +149,7 @@ function Home({ navigation }) {
   useEffect(() => {
     setLoading(true);
     getWorkDetails();
-  }, [])
+  }, [])  
 
   useEffect(() => {
     setSelEvents(eventsList.filter(e => e.start.getDate() === selDate.getDate()));
@@ -219,6 +217,10 @@ function Home({ navigation }) {
       {/* plus icon for add form */}
       <TouchableOpacity style={styles.logoutIcon} onPress={signOut} >
         <FontAwesome name='sign-out' size={25} color='#fff' />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.download} onPress={()=> writeDataAndDownloadExcelFile(eventsList, setLoading)} >
+        <FontAwesome name='arrow-down' size={25} color='#fff' />
       </TouchableOpacity>
 
       {contextVal.user?.roleName === 'HOD' &&
@@ -330,11 +332,22 @@ const styles = StyleSheet.create({
     position: 'absolute',
     justifyContent: 'center',
     alignItems: 'center',
-    bottom: 150,
+    bottom: 210,
     right: 20,
     height: 50,
     width: 50,
     backgroundColor: '#bb4141',
+    borderRadius: 100
+  },
+  download: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    bottom: 150,
+    right: 20,
+    height: 50,
+    width: 50,
+    backgroundColor: '#17ab37',
     borderRadius: 100
   },
   userIcon: {
