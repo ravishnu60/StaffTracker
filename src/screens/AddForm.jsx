@@ -7,6 +7,17 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import axiosInstance from '../utils/axiosInstance';
 import { dateStr, Loading } from '../utils/utils';
 import { useNavigation } from '@react-navigation/native';
+import { Dropdown } from 'react-native-element-dropdown';
+
+
+const outcomeData= [
+    {label: 'Work Product', value: 'P' },
+    {label: 'Service', value: 'S' },
+    {label: 'Meeting', value: 'M' },
+    {label: 'Personal related to Research, FDP', value: 'X' },
+    {label: 'Training program', value: 'T' },
+]
+
 
 const FormScreen = ({ route }) => {
     const { colors } = useTheme();
@@ -55,7 +66,7 @@ const FormScreen = ({ route }) => {
         axiosInstance({
             method: 'POST',
             url: 'staff/workdetails/create',
-            data: { ...data, date: dateStr(date) }
+            data: { ...data, date: dateStr(date), outcome: data.outcome.value }
         }).then((res) => {
             if (res.data.status) {
                 Alert.alert('Success', 'Work Details saved');
@@ -90,14 +101,13 @@ const FormScreen = ({ route }) => {
 
             {/* Form Fields with Validation */}
             {[
-                { key: 'project', label: 'Project', rules: { required: 'Project is required' } },
-                { key: 'particulars', label: 'Particulars', rules: { required: 'Particulars are required' } },
-                { key: 'unit', label: 'Unit', keyboardType: 'numeric', rules: { required: 'Unit is required', pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' } } },
-                { key: 'lessons', label: 'Lessons', rules: { required: 'Lessons are required' } },
-                { key: 'outcome', label: 'Outcome', rules: { required: 'Outcome is required' } },
-                { key: 'hrs', label: 'Hours', keyboardType: 'numeric', rules: { required: 'Hours are required', pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' } } },
-                { key: 'num', label: 'Number', rules: { required: 'Number is required' } }, //pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' }
-                { key: 'status', label: 'Status', rules: { required: 'Status is required' } },
+                { key: 'project', label: 'Project *', rules: { required: 'Project is required' } },
+                { key: 'particulars', label: 'Particulars *', rules: { required: 'Particulars are required' } },
+                { key: 'unit', label: 'Unit', keyboardType: 'numeric', rules: { pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' } } },
+                { key: 'lessons', label: 'Lessons', rules: { } },
+                { key: 'hrs', label: 'Hours (Minutes) *', keyboardType: 'numeric', rules: { required: 'Hours are required', pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' } } },
+                { key: 'num', label: 'Number', rules: { } }, //pattern: { value: /^[0-9]+$/, message: 'Only numbers allowed' }
+                { key: 'status', label: 'Status *', rules: { required: 'Status is required' } },
                 { key: 'url', label: 'URL', rules: { pattern: { value: /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/, message: 'Enter a valid URL' } } },
             ].map((field) => (
                 <View key={field.key}>
@@ -108,6 +118,8 @@ const FormScreen = ({ route }) => {
                         render={({ field: { onChange, onBlur, value } }) => (
                             <TextInput
                                 label={field.label}
+                                placeholder={field.key === 'hrs' ? 'Enter in minutes' : ''}
+                                placeholderTextColor={'#b5b5b5'}
                                 value={value}
                                 onBlur={onBlur}
                                 onChangeText={onChange}
@@ -121,6 +133,28 @@ const FormScreen = ({ route }) => {
                     {errors[field.key] && <HelperText style={{ paddingTop: 0 }} type="error">{errors[field.key]?.message}</HelperText>}
                 </View>
             ))}
+
+            {/* Dropdown */}
+            <Controller
+                control={control}
+                name="outcome"
+                rules={{ required: 'Outcome is required' }}
+                render={({ field: { onChange, onBlur, value } }) => (
+                    <Dropdown
+                        data={outcomeData}
+                        labelField={"label"}
+                        valueField={"value"}
+                        placeholder="Select Outcome *"
+                        value={value}
+                        onBlur={onBlur}
+                        onChange={onChange}
+                        mode="outlined"
+                        style={[styles.dropdown, errors.outcome ? { borderColor: '#9f0d0d', borderWidth: 2 } : null]}
+                        
+                    />
+                )}
+            />
+            {errors.outcome && <HelperText style={{ paddingTop: 0 }} type="error">{errors.outcome?.message}</HelperText>}
 
             {/* Date Picker */}
             <Button style={{ marginVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: colors.primary }} onPress={showDatepicker}>
@@ -146,11 +180,18 @@ const styles = StyleSheet.create({
         // justifyContent: 'center',
     },
     input: {
-        marginBottom: 10,
+        marginTop: 10,
     },
     button: {
         marginTop: 10,
     },
+    dropdown: {
+        borderWidth: 1,
+        borderColor: 'gray',
+        borderRadius: 5,
+        marginTop: 15,
+        padding: 15
+    }
 });
 
 export default FormScreen;

@@ -3,6 +3,7 @@ import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from 're
 import { Calendar } from 'react-native-big-calendar';
 import { Button, Text } from 'react-native-paper';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
+import Ionicons from 'react-native-vector-icons/Ionicons'; Ionicons
 import axiosInstance from '../utils/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ContextData } from '../navigations/MainNavigation';
@@ -27,7 +28,9 @@ function Home({ navigation }) {
   const [role, setRole] = useState('');
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [menu, setMenu] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [showDownload, setShowDownload] = useState(false);
 
   const selectedDate = (date) => {
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
@@ -132,6 +135,7 @@ function Home({ navigation }) {
         {
           text: 'OK',
           onPress: async () => {
+            setMenu(false);
             await AsyncStorage.removeItem('token');
             await AsyncStorage.removeItem('role');
             navigation.navigate('Login');
@@ -149,7 +153,7 @@ function Home({ navigation }) {
   useEffect(() => {
     setLoading(true);
     getWorkDetails();
-  }, [])  
+  }, [])
 
   useEffect(() => {
     setSelEvents(eventsList.filter(e => e.start.getDate() === selDate.getDate()));
@@ -158,7 +162,6 @@ function Home({ navigation }) {
   useEffect(() => {
     getRoleName();
   }, [])
-
 
   return (
     <View style={styles.container}>
@@ -186,7 +189,7 @@ function Home({ navigation }) {
           onPressCell={(date) => setSelDate(date)}
         />
       </View>
-      <Text style={{ fontWeight: 'bold', padding: 8, marginTop: 260, marginBottom: 10, textAlign: 'center', backgroundColor:'#30abe5' }}>Entries on  - {selDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
+      <Text style={{ fontWeight: 'bold', padding: 8, marginTop: 260, marginBottom: 10, textAlign: 'center', backgroundColor: '#30abe5' }}>Entries on  - {selDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
 
       <ScrollView style={{ padding: 5 }}>
         {
@@ -214,32 +217,59 @@ function Home({ navigation }) {
             </TouchableOpacity>)
         }
       </ScrollView>
-      {/* plus icon for add form */}
-      <TouchableOpacity style={styles.logoutIcon} onPress={signOut} >
-        <FontAwesome name='sign-out' size={25} color='#fff' />
+
+      <TouchableOpacity style={styles.menuIcon} onPress={() => setMenu(true)} >
+        <FontAwesome name='th-list' size={25} color='#fff' />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.download} onPress={()=> writeDataAndDownloadExcelFile(eventsList, setLoading)} >
-        <FontAwesome name='arrow-down' size={25} color='#fff' />
-      </TouchableOpacity>
+      {/* Menu modal */}
+      <Modal animationType="slide" transparent={true} visible={menu} onRequestClose={() => setMenu(false)} >
+        <View style={styles.menuModal}>
+          <View style={styles.menuContent}>
+            <Text style={styles.menuText}>Actions</Text>
+            <TouchableOpacity style={styles.addIcon} onPress={() => {
+              setMenu(false);
+              navigation.navigate('AddForm');
+            }} >
+              <FontAwesome name='tasks' size={25} color='#00840b' />
+              <Text style={styles.addText}>Add Work Detail</Text>
+            </TouchableOpacity>
 
-      {contextVal.user?.roleName === 'HOD' &&
-        <TouchableOpacity style={styles.userIcon} onPress={() => navigation.navigate('User', { type: 'HOD', departmantName: contextVal?.user?.departmentName })} >
-          <FontAwesome name='users' size={25} color='#fff' />
-        </TouchableOpacity>
-      }
+            <TouchableOpacity style={styles.addIcon} onPress={() => {
+              setMenu(false);
+              writeDataAndDownloadExcelFile(eventsList, contextVal?.user?.addressingname, setLoading);
+            }} >
+              <FontAwesome name='download' size={25} color='#0e536c' />
+              <Text style={styles.addText}>Download</Text>
+            </TouchableOpacity>
 
-      <TouchableOpacity style={styles.addIcon} onPress={() => navigation.navigate('AddForm')} >
-        <FontAwesome name='plus' size={25} color='#fff' />
-      </TouchableOpacity>
+            {contextVal.user?.roleName === 'HOD' &&
+              <TouchableOpacity style={styles.addIcon} onPress={() => {
+                setMenu(false);
+                navigation.navigate('User', { type: 'HOD', departmantName: contextVal?.user?.departmentName });
+              }} >
+                <FontAwesome name='user-plus' size={25} color='#14734c' />
+                <Text style={styles.addText}>Users</Text>
+              </TouchableOpacity>
+            }
 
-      {/* Modal */}
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+            <TouchableOpacity style={styles.addIcon} onPress={signOut} >
+              <Ionicons name='exit' size={28} color='#d10b0bff' />
+              <Text style={styles.addText}>Logout</Text>
+            </TouchableOpacity>
+
+            <View style={{ alignItems: 'center', marginTop: 20 }}>
+              <TouchableOpacity style={[styles.addIcon, { backgroundColor: '#d10b0bff', columnGap: 5 }]} onPress={() => setMenu(false)} >
+                <Ionicons name='close' size={25} color='#ffffffff' />
+                <Text style={[styles.addText, { color: '#ffffffff' }]}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Work detail modal */}
+      <Modal animationType="fade" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)} >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             {selectedItem && (
@@ -328,40 +358,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: '#d8f7ff',
   },
-  logoutIcon: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-    bottom: 210,
-    right: 20,
-    height: 50,
-    width: 50,
-    backgroundColor: '#bb4141',
-    borderRadius: 100
-  },
-  download: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-    bottom: 150,
-    right: 20,
-    height: 50,
-    width: 50,
-    backgroundColor: '#17ab37',
-    borderRadius: 100
-  },
-  userIcon: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-    bottom: 80,
-    right: 20,
-    height: 50,
-    width: 50,
-    backgroundColor: '#41bb69',
-    borderRadius: 100
-  },
-  addIcon: {
+  menuIcon: {
     position: 'absolute',
     justifyContent: 'center',
     alignItems: 'center',
@@ -369,7 +366,52 @@ const styles = StyleSheet.create({
     right: 20,
     height: 50,
     width: 50,
-    backgroundColor: '#44b1e4',
+    backgroundColor: '#035268',
+    borderRadius: 100
+  },
+  menuModal: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: '#00000000',
+  },
+  menuContent: {
+    backgroundColor: '#d5ede2ff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+  },
+  menuText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#6200ee',
+    textAlign: 'center',
+    marginBottom: 20
+  },
+  addIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 15,
+    marginBottom: 15,
+    backgroundColor: '#f3f3f3',
+    padding: 10,
+    borderRadius: 5,
+    shadowColor: '#000000ff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 2,
+    overflow: 'hidden'
+  },
+  addText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#383838'
+  },
+  logoutIcon: {
+    right: 20,
+    height: 50,
+    width: 50,
+    backgroundColor: '#bb4141',
     borderRadius: 100
   },
   card: {
@@ -406,7 +448,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)', // semi-transparent background
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     backgroundColor: '#fff',
