@@ -7,6 +7,7 @@ import Ionicons from 'react-native-vector-icons/Ionicons'; Ionicons
 import axiosInstance from '../utils/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ContextData } from '../navigations/MainNavigation';
+import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { dateStr, getMonthStartAndEnd, Loading, writeDataAndDownloadExcelFile } from '../utils/utils';
 
 function Home({ navigation }) {
@@ -150,6 +151,35 @@ function Home({ navigation }) {
     setModalVisible(true);
   };
 
+
+  // download
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
+
+  const showDatePicker = (date, setDate) => {
+    DateTimePickerAndroid.open({
+      value: date,
+      mode: 'date',
+      is24Hour: true,
+      onChange: (event, selectedDate) => {
+        if (selectedDate) {
+          setDate(selectedDate);
+        }
+      },
+    });
+  };
+
+  const handleDownload = () => {
+    if (!fromDate || !toDate) {
+      Alert.alert('Error', 'Please select both From Date and To Date.');
+      return;
+    }
+
+    // Proceed with file download
+    writeDataAndDownloadExcelFile(eventsList, contextVal?.user?.addressingname, setLoading, fromDate, toDate);
+  };
+
+
   useEffect(() => {
     setLoading(true);
     getWorkDetails();
@@ -162,6 +192,12 @@ function Home({ navigation }) {
   useEffect(() => {
     getRoleName();
   }, [])
+
+  useEffect(() => {
+    const dates = getMonthStartAndEnd(selDate);
+    setFromDate(new Date(dates.startDate));
+    setToDate(new Date(dates.endDate));
+  }, [menu])
 
   return (
     <View style={styles.container}>
@@ -235,13 +271,46 @@ function Home({ navigation }) {
               <Text style={styles.addText}>Add Work Detail</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.addIcon} onPress={() => {
-              setMenu(false);
-              writeDataAndDownloadExcelFile(eventsList, contextVal?.user?.addressingname, setLoading);
-            }} >
-              <FontAwesome name='download' size={25} color='#0e536c' />
-              <Text style={styles.addText}>Download</Text>
-            </TouchableOpacity>
+            <View style={{ marginBottom: 15 }} >
+              <TouchableOpacity style={[styles.addIcon, { marginBottom: 5, justifyContent: 'space-between' }]} onPress={() => setShowDownload(!showDownload)} >
+                <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: 15 }}>
+                  <FontAwesome name='download' size={25} color='#0e536c' />
+                  <Text style={styles.addText}>Download</Text>
+                </View>
+                <Ionicons name={showDownload ? 'chevron-up' : 'chevron-down'} size={25} color='#0e536c' />
+              </TouchableOpacity>
+              {
+                showDownload ?
+                  <>
+
+                    <View style={{ flexDirection: 'row', columnGap: 10, padding: 10 }}>
+                      {/* From Date Picker */}
+                      <TouchableOpacity
+                        style={{ padding: 10, backgroundColor: '#0e536c', borderRadius: 5 }}
+                        onPress={() => showDatePicker(fromDate, setFromDate)}
+                      >
+                        <Text style={{ color: 'white', fontSize: 13 }}>From: {fromDate ? fromDate.toDateString() : 'Select From Date'}</Text>
+                      </TouchableOpacity>
+
+                      {/* To Date Picker */}
+                      <TouchableOpacity
+                        style={{ padding: 10, backgroundColor: '#0e536c', borderRadius: 5 }}
+                        onPress={() => showDatePicker(toDate, setToDate)}
+                      >
+                        <Text style={{ color: 'white', fontSize: 13 }}>To: {toDate ? toDate.toDateString() : 'Select To Date'}</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <TouchableOpacity style={[styles.addIcon, { marginBottom: 5 }]} onPress={() => {
+                      setMenu(false);
+                      writeDataAndDownloadExcelFile()
+                    }} >
+                      <FontAwesome name='download' size={25} color='#0e536c' />
+                      <Text style={styles.addText}>Download</Text>
+                    </TouchableOpacity>
+                  </>
+                  : ''
+              }
+            </View>
 
             {contextVal.user?.roleName === 'HOD' &&
               <TouchableOpacity style={styles.addIcon} onPress={() => {
