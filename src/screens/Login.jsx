@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, ScrollView, Alert, ImageBackground } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -15,7 +15,7 @@ import { ContextData } from '../navigations/MainNavigation';
 const Login = () => {
   const navigate = useNavigation();
   const isFocused = useIsFocused();
-  const contextVal= useContext(ContextData);
+  const contextVal = useContext(ContextData);
 
   // loading
   const [loading, setLoading] = useState(false);
@@ -27,7 +27,7 @@ const Login = () => {
     remember: yup.boolean(),
   });
   const { control, handleSubmit, formState: { errors }, reset } = useForm({
-    resolver: yupResolver(schema),defaultValues: {
+    resolver: yupResolver(schema), defaultValues: {
       username: '',
       password: '',
       remember: false
@@ -48,7 +48,7 @@ const Login = () => {
 
   const onSubmit = (data) => {
     console.log(data);
-    
+
     if (data.remember) {
       AsyncStorage.setItem('username', data.username);
       AsyncStorage.setItem('password', data.password);
@@ -56,7 +56,7 @@ const Login = () => {
       AsyncStorage.removeItem('username');
       AsyncStorage.removeItem('password');
     }
-    
+
     setLoading(true);
     axiosInstance({
       method: 'POST',
@@ -86,55 +86,59 @@ const Login = () => {
   useEffect(() => {
     if (isFocused) {
       reset();
-     patchValueIfExist();
+      patchValueIfExist();
     }
   }, [isFocused])
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 20, flexGrow: 1, justifyContent: 'center' }} >
-      <Loading visible={loading} />
-      <Text variant="headlineLarge" style={{ textAlign: 'center', marginBottom: 20 }}>Login</Text>
-      {[
-        { name: 'username', label: 'Email ID' },
-        { name: 'password', label: 'Password', secureTextEntry: true },
-      ].map(({ name, label, ...rest }) => (
-        <View key={name} style={{ marginBottom: 10 }}>
-          <Controller
-            control={control}
-            name={name}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                label={label}
-                value={value || ''}
-                onBlur={onBlur}
-                onChangeText={onChange}
-                error={!!errors[name]}
-                {...rest}
+    <ImageBackground source={require('../assets/Designer.png')} style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 20, flexGrow: 1, justifyContent: 'center', backgroundColor: '#cb8a8a2f' }} >
+        <Loading visible={loading} />
+        <View style={{ backgroundColor: '#fff', padding: 20, borderRadius: 10 }}>
+          <Text variant="titleLarge" style={{ textAlign: 'center', marginBottom: 20, fontWeight: 'bold' }}>Login</Text>
+          {[
+            { name: 'username', label: 'Email ID' },
+            { name: 'password', label: 'Password', secureTextEntry: true },
+          ].map(({ name, label, ...rest }) => (
+            <View key={name} style={{ marginBottom: 10 }}>
+              <Controller
+                control={control}
+                name={name}
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    label={label}
+                    value={value || ''}
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    error={!!errors[name]}
+                    {...rest}
+                  />
+                )}
               />
-            )}
-          />
 
-          <Text style={{ color: 'red' }}>{errors[name]?.message}</Text>
-        </View>
-      ))}
-      {/* check box for remember me */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
-        <Controller
-          control={control}
-          name="remember"
-          render={({ field: { onChange, value } }) => (
-            <Checkbox
-              status={value ? 'checked' : 'unchecked'}
-              onPress={() => onChange(!value)}
+              <Text style={{ color: 'red' }}>{errors[name]?.message}</Text>
+            </View>
+          ))}
+          {/* check box for remember me */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+            <Controller
+              control={control}
+              name="remember"
+              render={({ field: { onChange, value } }) => (
+                <Checkbox
+                  status={value ? 'checked' : 'unchecked'}
+                  onPress={() => onChange(!value)}
+                />
+              )}
             />
-          )}
-        />
-        <Text style={{ marginLeft: 10 }}>Remember Me</Text>
-      </View>
-      <Button mode="contained" onPress={handleSubmit(onSubmit)} style={{ marginTop: 20 }}>
-        Login
-      </Button>
-    </ScrollView>
+            <Text style={{ marginLeft: 10 }}>Remember Me</Text>
+          </View>
+          <Button mode="contained" onPress={handleSubmit(onSubmit)} style={{ marginTop: 20 }}>
+            Login
+          </Button>
+        </View>
+      </ScrollView>
+    </ImageBackground>
   );
 };
 

@@ -8,7 +8,7 @@ import axiosInstance from '../utils/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ContextData } from '../navigations/MainNavigation';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { dateStr, getMonthStartAndEnd, Loading, writeDataAndDownloadExcelFile } from '../utils/utils';
+import { dateStr, getMonthStartAndEnd, HODDownloadExcelFile, Loading, writeDataAndDownloadExcelFile } from '../utils/utils';
 
 function Home({ navigation }) {
   const [selDate, setSelDate] = useState(new Date());
@@ -51,6 +51,7 @@ function Home({ navigation }) {
   const getWorkDetails = () => {
     setLoading(true);
     const dates = getMonthStartAndEnd(selDate);
+    console.log(dates);
 
     axiosInstance({
       method: 'GET',
@@ -169,21 +170,70 @@ function Home({ navigation }) {
     });
   };
 
-  const handleDownload = () => {
-    if (!fromDate || !toDate) {
-      Alert.alert('Error', 'Please select both From Date and To Date.');
-      return;
-    }
+  const downloadOne = () => {
+    setMenu(false);
+    setLoading(true);
+    axiosInstance({
+      method: 'GET',
+      url: `staff/workdetails/userListByDate/${dateStr(fromDate)}/${dateStr(toDate)}`
+    }).then((res) => {
+      if (res.data.status) {
+        let temp = res.data?.responseDto.workingDetailsList.map(w => ({
+          start: new Date(w.date),
+          project: w.project,
+          particulars: w.particulars,
+          unit: w.unit,
+          lessons: w.lessons,
+          outcome: w.outcome,
+          hrs: w.hrs,
+          num: w.num,
+          status: w.status,
+          url: w.url,
+          id: w.id
+        }))
+        writeDataAndDownloadExcelFile(temp, contextVal?.user?.addressingname, setLoading, fromDate.getMonth(), toDate.getMonth());
+      }
+    }).catch((err) => {
+      console.log(err);
+      setLoading(false);
+    })
+  }
 
-    // Proceed with file download
-    writeDataAndDownloadExcelFile(eventsList, contextVal?.user?.addressingname, setLoading, fromDate, toDate);
-  };
-
+  const downloadHOD = () => {
+    setMenu(false);
+    setLoading(true);
+    axiosInstance({
+      method: 'GET',
+      url: `staff/workdetails/hodByDate/${dateStr(fromDate)}/${dateStr(toDate)}`
+    }).then((res) => {
+      if (res.data.status) {
+        let temp = res.data?.responseDto.hodWorkingdetailsDTOs.map(w => ({
+          addressingname: w.addressingname,
+          workingDetails: w.workingDetails.map(wd => ({
+            date: dateStr(new Date(wd.date)),
+            project: wd.project,
+            particulars: wd.particulars,
+            unit: wd.unit,
+            lessons: wd.lessons,
+            outcome: wd.outcome,
+            hrs: wd.hrs,
+            num: wd.num,
+            status: wd.status,
+            url: wd.url
+          }))
+        }))
+        HODDownloadExcelFile(temp, setLoading, fromDate.getMonth(), toDate.getMonth());
+      }
+    }).catch((err) => {
+      console.log(err);
+      setLoading(false);
+    })
+  }
 
   useEffect(() => {
     setLoading(true);
     getWorkDetails();
-  }, [])
+  }, [selDate]);
 
   useEffect(() => {
     setSelEvents(eventsList.filter(e => e.start.getDate() === selDate.getDate()));
@@ -197,6 +247,7 @@ function Home({ navigation }) {
     const dates = getMonthStartAndEnd(selDate);
     setFromDate(new Date(dates.startDate));
     setToDate(new Date(dates.endDate));
+    setShowDownload(false);
   }, [menu])
 
   return (
@@ -205,11 +256,11 @@ function Home({ navigation }) {
       <View>
         <View style={styles.calendar_head}>
           <Button onPress={() => setSelDate(new Date(selDate.getFullYear(), selDate.getMonth() - 1))}>
-            <FontAwesome name='chevron-left' width={25} height={25} />
+            <Ionicons name='caret-back' size={25} />
           </Button>
-          <Text>{selectedDate(selDate)}</Text>
+          <Text style={{ fontSize: 16, color: '#2a2a2a', fontWeight: 'bold' }}>{selectedDate(selDate)}</Text>
           <Button onPress={() => setSelDate(new Date(selDate.getFullYear(), selDate.getMonth() + 1))}>
-            <FontAwesome name='chevron-right' width={25} height={25} />
+            <Ionicons name='caret-forward' size={25} />
           </Button>
         </View>
         <Calendar
@@ -221,11 +272,11 @@ function Home({ navigation }) {
           renderEvent={RenderEvent}
           calendarCellStyle={styles.calendar}
           calendarCellTextStyle={{ textAlign: 'center', fontWeight: 'bold' }}
-          headerContainerStyle={{ backgroundColor: '#30abe5' }}
+          headerContainerStyle={{ backgroundColor: '#d7d7d7', padding: 5 }}
           onPressCell={(date) => setSelDate(date)}
         />
       </View>
-      <Text style={{ fontWeight: 'bold', padding: 8, marginTop: 260, marginBottom: 10, textAlign: 'center', backgroundColor: '#30abe5' }}>Entries on  - {selDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
+      <Text style={{ fontWeight: 'bold', padding: 8, marginTop: 260, marginBottom: 10, textAlign: 'center', backgroundColor: '#80d06d' }}>Entries on  - {selDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</Text>
 
       <ScrollView style={{ padding: 5 }}>
         {
@@ -281,33 +332,34 @@ function Home({ navigation }) {
               </TouchableOpacity>
               {
                 showDownload ?
-                  <>
+                  <View style={{ backgroundColor: '#dbdbdb', borderRadius: 5, padding: 5 }}>
 
                     <View style={{ flexDirection: 'row', columnGap: 10, padding: 10 }}>
                       {/* From Date Picker */}
-                      <TouchableOpacity
-                        style={{ padding: 10, backgroundColor: '#0e536c', borderRadius: 5 }}
-                        onPress={() => showDatePicker(fromDate, setFromDate)}
-                      >
-                        <Text style={{ color: 'white', fontSize: 13 }}>From: {fromDate ? fromDate.toDateString() : 'Select From Date'}</Text>
+                      <TouchableOpacity style={styles.datePicker} onPress={() => showDatePicker(fromDate, setFromDate)}  >
+                        <Text style={{ color: '#000000', fontSize: 13 }}>From: {fromDate ? dateStr(fromDate) : 'Select From Date'}</Text>
+                        <Ionicons name='calendar' size={25} color='#0e536c' />
                       </TouchableOpacity>
 
                       {/* To Date Picker */}
-                      <TouchableOpacity
-                        style={{ padding: 10, backgroundColor: '#0e536c', borderRadius: 5 }}
-                        onPress={() => showDatePicker(toDate, setToDate)}
-                      >
-                        <Text style={{ color: 'white', fontSize: 13 }}>To: {toDate ? toDate.toDateString() : 'Select To Date'}</Text>
+                      <TouchableOpacity style={styles.datePicker} onPress={() => showDatePicker(toDate, setToDate)} >
+                        <Text style={{ color: '#000000', fontSize: 13 }}>To: {toDate ? dateStr(toDate) : 'Select To Date'}</Text>
+                        <Ionicons name='calendar' size={25} color='#0e536c' />
                       </TouchableOpacity>
                     </View>
-                    <TouchableOpacity style={[styles.addIcon, { marginBottom: 5 }]} onPress={() => {
-                      setMenu(false);
-                      writeDataAndDownloadExcelFile()
-                    }} >
-                      <FontAwesome name='download' size={25} color='#0e536c' />
-                      <Text style={styles.addText}>Download</Text>
-                    </TouchableOpacity>
-                  </>
+                    <View style={{ flexDirection: 'row', columnGap: 10, justifyContent: 'center', marginTop: 10 }}>
+                      <TouchableOpacity style={[styles.addIcon, { marginBottom: 5, backgroundColor: 'green' }]} onPress={downloadOne} >
+                        <FontAwesome name='download' size={20} color='#ffffff' />
+                        <Text style={styles.downloadText}>Download</Text>
+                      </TouchableOpacity>
+                      {contextVal.user?.roleName === 'HOD' &&
+                        <TouchableOpacity style={[styles.addIcon, { marginBottom: 5, backgroundColor: 'green' }]} onPress={downloadHOD} >
+                          <FontAwesome name='download' size={20} color='#ffffff' />
+                          <Text style={styles.downloadText}>Download All</Text>
+                        </TouchableOpacity>
+                      }
+                    </View>
+                  </View>
                   : ''
               }
             </View>
@@ -409,13 +461,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#44b1e4',
-    padding: 10,
+    backgroundColor: '#80d06d',
+    padding: 8,
   },
   calendar: {
     alignItems: 'center',
-    borderColor: '#5e5e5e',
-    backgroundColor: '#e6f6fa',
+    borderColor: '#9090905d',
+    backgroundColor: '#ffffff',
     padding: 3
   },
   details: {
@@ -441,7 +493,7 @@ const styles = StyleSheet.create({
   menuModal: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: '#00000000',
+    backgroundColor: '#00000043',
   },
   menuContent: {
     backgroundColor: '#d5ede2ff',
@@ -455,6 +507,19 @@ const styles = StyleSheet.create({
     color: '#6200ee',
     textAlign: 'center',
     marginBottom: 20
+  },
+  datePicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    columnGap: 10,
+    padding: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 5,
+    elevation: 2,
+    shadowColor: '#000000ff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
   },
   addIcon: {
     flexDirection: 'row',
@@ -476,12 +541,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#383838'
   },
-  logoutIcon: {
-    right: 20,
-    height: 50,
-    width: 50,
-    backgroundColor: '#bb4141',
-    borderRadius: 100
+  downloadText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   card: {
     backgroundColor: '#deeef0',

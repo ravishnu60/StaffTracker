@@ -36,7 +36,7 @@ const monthName = {
 }
 
 // function to handle writing and downloading excel file
-export const writeDataAndDownloadExcelFile = (data, user, setLoading) => {
+export const writeDataAndDownloadExcelFile = (data, user, setLoading, fromMonthIndex, toMonthIndex) => {
     setLoading(true);
     let data_to_export = data.map((item, index) => {
         return { "S.No": index + 1, "Date": dateStr(item.start), "Project": item.project, "Particulars": item.particulars, "Unit": item.unit, "Lesson": item.lessons, "Outcome": item.outcome, "Hrs": item.hrs, "Num": item.num, "Status": item.status, "Link": item.url }
@@ -48,7 +48,7 @@ export const writeDataAndDownloadExcelFile = (data, user, setLoading) => {
     const wbout = XLSX.write(wb, { type: 'binary', bookType: "xlsx" });
 
     // Write generated excel to Storage
-    RNFS.writeFile(RNFS.DownloadDirectoryPath + `/CA-DAR-${monthName[data[0].start.getMonth()].toUpperCase()}.xlsx`, wbout, 'ascii').then((r) => {
+    RNFS.writeFile(RNFS.DownloadDirectoryPath + `/CA-DAR-${monthName[fromMonthIndex].toUpperCase()}-${monthName[toMonthIndex].toUpperCase()}.xlsx`, wbout, 'ascii').then((r) => {
         ToastAndroid.showWithGravity(
             'File Downloaded Successfully, Check Download Folder',
             ToastAndroid.SHORT,
@@ -67,40 +67,10 @@ export const writeDataAndDownloadExcelFile = (data, user, setLoading) => {
 
 }
 
-export const HODDownloadExcelFile = (data, setLoading) => {
-    let temp= [
-        {addressingname: "A1",
-            workingDetails: [ {
-                date: "2023-01-01",
-                project: "Project 1",
-                particulars: "Particulars 1",
-                unit: "Unit 1",
-                lessons: "Lessons 1",
-                outcome: "Outcome 1",
-                hrs: "Hrs 1",
-                num: "Num 1",
-                status: "Status 1",
-                url: "Url 1"
-            }]
-        },
-        {addressingname: "A3",
-            workingDetails: [ {
-                date: "2023-01-01",
-                project: "Project 1",
-                particulars: "Particulars 1",
-                unit: "Unit 1",
-                lessons: "Lessons 1",
-                outcome: "Outcome 1",
-                hrs: "Hrs 1",
-                num: "Num 1",
-                status: "Status 1",
-                url: "Url 1"
-            }]
-        }
-    ]
+export const HODDownloadExcelFile = (data, setLoading, fromMonthIndex, toMonthIndex) => {
     setLoading(true);
     let wb = XLSX.utils.book_new();
-    temp.forEach((item, index) => {
+    data.forEach((item, index) => {
         let ws = XLSX.utils.json_to_sheet(item.workingDetails)
         XLSX.utils.book_append_sheet(wb, ws, item.addressingname)
     })
@@ -108,7 +78,7 @@ export const HODDownloadExcelFile = (data, setLoading) => {
     const wbout = XLSX.write(wb, { type: 'binary', bookType: "xlsx" });
 
     // Write generated excel to Storage
-    RNFS.writeFile(RNFS.DownloadDirectoryPath + `/CA-DAR-${'test'}.xlsx`, wbout, 'ascii').then((r) => {
+    RNFS.writeFile(RNFS.DownloadDirectoryPath + `/CA-DAR-ALL-${monthName[fromMonthIndex].toUpperCase()}-${monthName[toMonthIndex].toUpperCase()}.xlsx`, wbout, 'ascii').then((r) => {
         ToastAndroid.showWithGravity(
             'File Downloaded Successfully, Check Download Folder',
             ToastAndroid.SHORT,
