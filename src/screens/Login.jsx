@@ -91,8 +91,8 @@ const Login = () => {
   }, [isFocused])
 
   return (
-    <ImageBackground source={require('../assets/Designer.png')} style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={{ padding: 20, flexGrow: 1, justifyContent: 'center', backgroundColor: '#cb8a8a2f' }} >
+    <ImageBackground source={require('../assets/login_bg.png')} style={{ flex: 1 }} resizeMode='stretch'>
+      <ScrollView contentContainerStyle={{ padding: 20, flexGrow: 1, marginTop: 100, justifyContent: 'center'}} >
         <Loading visible={loading} />
         <View style={{ backgroundColor: '#fff', padding: 20, borderRadius: 10 }}>
           <Text variant="titleLarge" style={{ textAlign: 'center', marginBottom: 20, fontWeight: 'bold' }}>Login</Text>
