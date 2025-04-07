@@ -1,14 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, ScrollView, Alert, ImageBackground } from 'react-native';
+import { View, ScrollView, Alert, ImageBackground, TouchableOpacity } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { TextInput, Button, Text, Checkbox } from 'react-native-paper';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import axiosInstance from '../utils/axiosInstance';
 import { Loading } from '../utils/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { u } from 'react-native-big-calendar';
 import { ContextData } from '../navigations/MainNavigation';
 
 
@@ -19,7 +19,7 @@ const Login = () => {
 
   // loading
   const [loading, setLoading] = useState(false);
-
+  const [show, setShow] = useState(false);
   // Validation Schema
   const schema = yup.object().shape({
     username: yup.string().required('Username is required'),
@@ -92,13 +92,12 @@ const Login = () => {
 
   return (
     <ImageBackground source={require('../assets/login_bg.png')} style={{ flex: 1 }} resizeMode='stretch'>
-      <ScrollView contentContainerStyle={{ padding: 20, flexGrow: 1, marginTop: 100, justifyContent: 'center'}} >
+      <ScrollView contentContainerStyle={{ padding: 20, flexGrow: 1, marginTop: 100, justifyContent: 'center' }} >
         <Loading visible={loading} />
         <View style={{ backgroundColor: '#fff', padding: 20, borderRadius: 10 }}>
           <Text variant="titleLarge" style={{ textAlign: 'center', marginBottom: 20, fontWeight: 'bold' }}>Login</Text>
           {[
             { name: 'username', label: 'Email ID' },
-            { name: 'password', label: 'Password', secureTextEntry: true },
           ].map(({ name, label, ...rest }) => (
             <View key={name} style={{ marginBottom: 10 }}>
               <Controller
@@ -119,6 +118,29 @@ const Login = () => {
               <Text style={{ color: 'red' }}>{errors[name]?.message}</Text>
             </View>
           ))}
+
+          {/* password */}
+          <View style={{ marginBottom: 10 }}>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  label={"Password"}
+                  value={value || ''}
+                  onBlur={onBlur}
+                  onChangeText={onChange}
+                  error={!!errors['password']}
+                  secureTextEntry={!show}
+                />
+              )}
+            />
+            <TouchableOpacity onPress={() => setShow(!show)} style={{position:'absolute', right: 0, top: 3, padding: 15}}>
+              <Icon name={show ? "eye-off" : "eye"} size={24} color="#888" />
+            </TouchableOpacity>
+
+            <Text style={{ color: 'red' }}>{errors['password']?.message}</Text>
+          </View>
           {/* check box for remember me */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
             <Controller
