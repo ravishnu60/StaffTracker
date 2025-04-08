@@ -62,8 +62,6 @@ const User = ({ navigation, route }) => {
         setLoading(true);
         const url = route?.params?.type === 'HOD' ? 'staff/user/getDeparmentUsers' : 'staff/user/findAll'
         axiosInstance.get(url).then((res) => {
-            console.log(res.data);
-
             if (res.data.status) {
                 setUserList(res.data.responseDto?.userInfos || []);
             } else {
@@ -78,8 +76,6 @@ const User = ({ navigation, route }) => {
     }
 
     const department = watch('departmentId');
-    console.log("departments", route?.params?.departmantName, department);
-
     const getDepartments = () => {
         axiosInstance({
             method: 'GET',

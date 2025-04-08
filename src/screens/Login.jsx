@@ -47,8 +47,6 @@ const Login = () => {
   }
 
   const onSubmit = (data) => {
-    console.log(data);
-
     if (data.remember) {
       AsyncStorage.setItem('username', data.username);
       AsyncStorage.setItem('password', data.password);

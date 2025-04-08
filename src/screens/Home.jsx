@@ -8,22 +8,12 @@ import axiosInstance from '../utils/axiosInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ContextData } from '../navigations/MainNavigation';
 import { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { dateStr, getMonthStartAndEnd, HODDownloadExcelFile, Loading, writeDataAndDownloadExcelFile } from '../utils/utils';
+import { convertMinutesToHours, dateStr, getMonthStartAndEnd, HODDownloadExcelFile, Loading, writeDataAndDownloadExcelFile } from '../utils/utils';
 
 function Home({ navigation }) {
   const [selDate, setSelDate] = useState(new Date());
   const contextVal = useContext(ContextData);
-  const events = [
-    { start: new Date('2025-03-14'), end: new Date('2025-03-14'), unit: 'Math', lesson: 'Algebra', status: 'Completed' },
-    { start: new Date('2025-03-14'), end: new Date('2025-03-14'), unit: 'Math', lesson: 'Algebra', status: 'Completed' },
-    { start: new Date('2025-03-14'), end: new Date('2025-03-14'), unit: 'Math', lesson: 'Algebra', status: 'Completed' },
-    { start: new Date('2025-03-14'), end: new Date('2025-03-14'), unit: 'Math', lesson: 'Algebra', status: 'Completed' },
-    { start: new Date('2025-03-14'), end: new Date('2025-03-14'), unit: 'Math', lesson: 'Algebra', status: 'Completed' },
-    // { start: new Date('2025-02-15'), unit: 'Science', lesson: 'Physics', status: 'Pending' },
-    // { start: new Date('2025-02-14'), unit: 'English', lesson: 'Grammar', status: 'Completed' },
-    // { start: new Date('2025-02-17'), unit: 'History', lesson: 'World War II', status: 'Ongoing' },
-    // { start: new Date('2025-02-18'), unit: 'Chemistry', lesson: 'Organic', status: 'Completed' },
-  ];
+
   const [eventsList, setEventsList] = useState([]);
   const [selEvents, setSelEvents] = useState([]);
   const [role, setRole] = useState('');
@@ -177,20 +167,27 @@ function Home({ navigation }) {
       method: 'GET',
       url: `staff/workdetails/userListByDate/${dateStr(fromDate)}/${dateStr(toDate)}`
     }).then((res) => {
+      let total = 0;
       if (res.data.status) {
-        let temp = res.data?.responseDto.workingDetailsList.map(w => ({
-          start: new Date(w.date),
-          project: w.project,
-          particulars: w.particulars,
-          unit: w.unit,
-          lessons: w.lessons,
-          outcome: w.outcome,
-          hrs: w.hrs,
-          num: w.num,
-          status: w.status,
-          url: w.url,
-          id: w.id
-        }))
+        let temp = res.data?.responseDto.workingDetailsList.map((w, index) => {
+          total += w.hrs;
+          return {
+            "S.No": index + 1,
+            "Date": dateStr(new Date(w.date)),
+            "Project": w.project,
+            "Particulars": w.particulars,
+            "Unit": w.unit,
+            "Lesson": w.lessons,
+            "Outcome": w.outcome,
+            "Hrs": convertMinutesToHours(w.hrs),
+            "Num": w.num,
+            "Status": w.status,
+            "Link": w.url,
+          }
+        })
+        Array.from({ length: 2 }, () => temp.push({ "S.No": '', "Date": '', "Project": '', "Particulars": '', "Unit": '', "Lesson": '', "Outcome": '', "Hrs": '', "Num": '', "Status": '', "Link": '' }));
+        temp.push({ "S.No": '', "Date": '', "Project": '', "Particulars": '', "Unit": '', "Lesson": '', "Outcome": 'Total Hours: ', "Hrs": convertMinutesToHours(total), "Num": '', "Status": '', "Link": '' });
+
         writeDataAndDownloadExcelFile(temp, contextVal?.user?.addressingname, setLoading, fromDate.getMonth(), toDate.getMonth());
       }
     }).catch((err) => {
@@ -207,21 +204,30 @@ function Home({ navigation }) {
       url: `staff/workdetails/hodByDate/${dateStr(fromDate)}/${dateStr(toDate)}`
     }).then((res) => {
       if (res.data.status) {
-        let temp = res.data?.responseDto.hodWorkingdetailsDTOs.map(w => ({
-          addressingname: w.addressingname,
-          workingDetails: w.workingDetails.map(wd => ({
-            date: dateStr(new Date(wd.date)),
-            project: wd.project,
-            particulars: wd.particulars,
-            unit: wd.unit,
-            lessons: wd.lessons,
-            outcome: wd.outcome,
-            hrs: wd.hrs,
-            num: wd.num,
-            status: wd.status,
-            url: wd.url
-          }))
-        }))
+        let temp = res.data?.responseDto.hodWorkingdetailsDTOs.map(w => {
+          let staff = { addressingname: w.addressingname };
+          let total = 0;
+          staff.workingDetails = w.workingDetails.map((wd, index) => {
+            total += wd.hrs;
+            return {
+              "S.No": index + 1,
+              "Date": dateStr(new Date(wd.date)),
+              "Project": wd.project,
+              "Particulars": wd.particulars,
+              "Unit": wd.unit,
+              "Lesson": wd.lessons,
+              "Outcome": wd.outcome,
+              "Hrs": convertMinutesToHours(wd.hrs),
+              "Num": wd.num,
+              "Status": wd.status,
+              "Link": wd.url
+            }
+          })
+          Array.from({ length: 2 }, () => staff.workingDetails.push({ "S.No": '', "Date": '', "Project": '', "Particulars": '', "Unit": '', "Lesson": '', "Outcome": '', "Hrs": '', "Num": '', "Status": '', "Link": '' }));
+          staff.workingDetails.push({ "S.No": '', "Date": '', "Project": '', "Particulars": '', "Unit": '', "Lesson": '', "Outcome": 'Total Hours: ', "Hrs": convertMinutesToHours(total), "Num": '', "Status": '', "Link": '' });  
+
+          return staff
+        })
         HODDownloadExcelFile(temp, setLoading, fromDate.getMonth(), toDate.getMonth());
       }
     }).catch((err) => {
@@ -418,7 +424,7 @@ function Home({ navigation }) {
                 </View>
                 <View style={styles.modalRow}>
                   <Text style={styles.modalLabel}>Hours</Text>
-                  <Text style={styles.modalValue}>{selectedItem.hrs}</Text>
+                  <Text style={styles.modalValue}>{convertMinutesToHours(selectedItem.hrs)}</Text>
                 </View>
                 <View style={styles.modalRow}>
                   <Text style={styles.modalLabel}>Number</Text>

@@ -38,12 +38,8 @@ const monthName = {
 // function to handle writing and downloading excel file
 export const writeDataAndDownloadExcelFile = (data, user, setLoading, fromMonthIndex, toMonthIndex) => {
     setLoading(true);
-    let data_to_export = data.map((item, index) => {
-        return { "S.No": index + 1, "Date": dateStr(item.start), "Project": item.project, "Particulars": item.particulars, "Unit": item.unit, "Lesson": item.lessons, "Outcome": item.outcome, "Hrs": item.hrs, "Num": item.num, "Status": item.status, "Link": item.url }
-    })
-
     let wb = XLSX.utils.book_new();
-    let ws = XLSX.utils.json_to_sheet(data_to_export)
+    let ws = XLSX.utils.json_to_sheet(data)
     XLSX.utils.book_append_sheet(wb, ws, user ? user : "Users")
     const wbout = XLSX.write(wb, { type: 'binary', bookType: "xlsx" });
 
@@ -95,4 +91,10 @@ export const HODDownloadExcelFile = (data, setLoading, fromMonthIndex, toMonthIn
         setLoading(false);
     })
 
+}
+
+export const convertMinutesToHours = (minutes) => {
+    const hours = `0${Math.floor(minutes / 60)}`.slice(-2);
+    const remainingMinutes = `0${minutes % 60}`.slice(-2);
+    return `${hours} : ${remainingMinutes}`;
 }

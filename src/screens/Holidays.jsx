@@ -68,23 +68,18 @@ const Holidays = ({ navigation }) => {
         })
     }
 
-    console.log("error", errors);
-
     const createHoliday = (data) => {
         let temp = { date: dateStr(date), type: data.type.value }
 
         if (mode === 'Edit') 
             temp.id = data.id
-        console.log("temp", temp);
         
         setLoading(true);
         axiosInstance({
             method: 'POST',
             url: 'staff/holiday/create',
             data: temp
-        }).then((res) => {
-            console.log(res.data);
-            
+        }).then((res) => {           
             if (res.data.status) {
                 getHolidays();
                 closeModal();
